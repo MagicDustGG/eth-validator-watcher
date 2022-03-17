@@ -13,7 +13,7 @@ sensitive_url = { git = "http://github.com/sigp/lighthouse", branch = "unstable"
 # ORM
 diesel = { version = "1.4.8", features = ["postgres"] }
 
-# network
+# async
 tokio = { version = "1.17.0", features = ["full"] }
 
 # utils

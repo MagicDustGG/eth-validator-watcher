@@ -11,7 +11,7 @@ impl Slot {
 	pub fn get_highest(conn: &PgConnection) -> Option<Slot> {
 		let query = slots.order(id.desc()).limit(1);
 		match query.load::<Slot>(conn) {
-			Ok(v) => v.first().map(|s| s.clone()),
+			Ok(v) => v.first().copied(),
 			Err(_) => None,
 		}
 	}
