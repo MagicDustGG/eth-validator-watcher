@@ -1,4 +1,4 @@
-use std::env::VarError;
+use std::{env::VarError, fmt::Display};
 
 use sensitive_url::SensitiveError;
 use tokio::task::JoinError;
@@ -39,5 +39,11 @@ impl From<JoinError> for Error {
 impl From<diesel::result::Error> for Error {
 	fn from(error: diesel::result::Error) -> Self {
 		Error::Diesel(error)
+	}
+}
+
+impl Display for Error {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(f, "{:?}", self)
 	}
 }

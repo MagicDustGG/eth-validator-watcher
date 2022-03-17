@@ -8,7 +8,11 @@ use sensitive_url::SensitiveUrl;
 
 use crate::Error;
 
-pub fn get_client() -> Result<BeaconNodeHttpClient, Error> {
+/// Create a new Beacon client
+///
+/// # Environment requirement
+/// `KILN_NODE_URL`: "http://<node_url>:<port>"
+pub fn new_kiln_client() -> Result<BeaconNodeHttpClient, Error> {
 	let raw_url = env::var("KILN_NODE_URL")?;
 	let url = SensitiveUrl::parse(&raw_url)?;
 
@@ -18,13 +22,15 @@ pub fn get_client() -> Result<BeaconNodeHttpClient, Error> {
 	))
 }
 
+/// Return the id of the highest slot synced by the node
 pub async fn get_head_height(client: &BeaconNodeHttpClient) -> Result<u64, Error> {
 	let ret = client.get_node_syncing().await?;
 
 	Ok(ret.data.head_slot.as_u64())
 }
 
-pub async fn get_validators(
+/// Return the list of validators at a given slot
+pub async fn get_validators_at_slot(
 	client: &BeaconNodeHttpClient,
 	slot_id: u64,
 ) -> Result<Option<Vec<ValidatorData>>, Error> {
