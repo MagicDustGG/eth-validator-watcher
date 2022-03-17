@@ -11,14 +11,15 @@ eth2          = { git = "http://github.com/sigp/lighthouse", branch = "unstable"
 sensitive_url = { git = "http://github.com/sigp/lighthouse", branch = "unstable" }
 
 # ORM
-diesel = { version = "1.4.8", features = ["mysql"] }
+diesel = { version = "1.4.8", features = ["postgres"] }
 
 # network
 tokio = { version = "1.17.0", features = ["full"] }
 
 # utils
-dotenv    = "0.15.0"
-itertools = "0.10.3"
+dotenv     = "0.15.0"
+env_logger = "0.9.0"
+log        = "0.4.14"
 
 
 [dev-dependencies]
