@@ -85,7 +85,6 @@ async fn main() -> Result<(), Error> {
 	let client = beacon_client::new_kiln_client()?;
 
 	let spec = beacon_client::get_config_spec(&client).await?;
-	println!("{:?}", spec);
 	let preset = spec.config.preset_base;
 	if preset != "mainnet" {
 		return Err(Error::InvalidChainPreset(preset))
@@ -97,7 +96,7 @@ async fn main() -> Result<(), Error> {
 	)
 	.upsert(&conn.lock().unwrap())?;
 
-	sync_to_head(&client, conn.clone(), Duration::from_secs(10)).await;
+	sync_to_head(&client, conn.clone(), Duration::from_secs(20)).await;
 
 	Ok(())
 }

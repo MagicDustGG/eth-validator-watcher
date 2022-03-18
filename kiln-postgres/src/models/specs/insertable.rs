@@ -10,6 +10,7 @@ pub struct NewSpec {
 }
 
 impl NewSpec {
+	/// Return a new insertable spec
 	pub fn new(name: &str, preset_base: &str) -> NewSpec {
 		NewSpec {
 			name: name.to_string(),

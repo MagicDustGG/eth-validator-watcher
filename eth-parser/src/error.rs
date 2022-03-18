@@ -10,7 +10,9 @@ pub enum Error {
 	Sensitive(SensitiveError),
 	Join(JoinError),
 	Diesel(diesel::result::Error),
+	/// Chain preset not supported
 	InvalidChainPreset(String),
+	/// Config name is missing from chain config
 	MissingChainName,
 }
 

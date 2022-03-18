@@ -3,15 +3,19 @@ use diesel::{Insertable, PgConnection, QueryResult};
 
 use crate::schema::slots;
 
+/// Representation of a row to be inserted
 #[derive(Insertable)]
 #[table_name = "slots"]
 pub struct NewSlot {
+	// postgresql doesn't support unsigned types
+	// all u64 are stored as i64 and converted back when used
 	spec: String,
 	height: i64,
 	validators_count: Option<i64>,
 }
 
 impl NewSlot {
+	/// Return a new insertable slot
 	pub fn new(spec: String, height: u64, validators_count: Option<usize>) -> NewSlot {
 		NewSlot {
 			spec,
@@ -20,12 +24,19 @@ impl NewSlot {
 		}
 	}
 
+	/// Return the slot height
 	pub fn height(&self) -> u64 {
 		self.height as u64
 	}
 
+	/// Return the slot validator count
 	pub fn validators_count(&self) -> Option<u64> {
 		self.validators_count.map(|c| c as u64)
+	}
+
+	/// Return the slot spec
+	pub fn spec(&self) -> String {
+		self.spec.clone()
 	}
 
 	/// Upser a slot on db

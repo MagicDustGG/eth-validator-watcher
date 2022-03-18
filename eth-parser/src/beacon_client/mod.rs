@@ -23,6 +23,8 @@ pub fn new_kiln_client() -> Result<BeaconNodeHttpClient, Error> {
 }
 
 /// Return the id of the highest slot synced by the node
+///
+/// https://ethereum.github.io/beacon-APIs/#/Node/getSyncingStatus response.head_slot
 pub async fn get_head_height(client: &BeaconNodeHttpClient) -> Result<u64, Error> {
 	let ret = client.get_node_syncing().await?;
 
@@ -30,6 +32,8 @@ pub async fn get_head_height(client: &BeaconNodeHttpClient) -> Result<u64, Error
 }
 
 /// Return the list of validators at a given slot
+///
+/// https://ethereum.github.io/beacon-APIs/#/Beacon/getStateValidators
 pub async fn get_validators_at_slot(
 	client: &BeaconNodeHttpClient,
 	slot_id: u64,
@@ -41,6 +45,9 @@ pub async fn get_validators_at_slot(
 	Ok(opt_r.map(|r| r.data))
 }
 
+/// Retur the chain spec
+///
+/// https://ethereum.github.io/beacon-APIs/#/Config/getSpec
 pub async fn get_config_spec(client: &BeaconNodeHttpClient) -> Result<ConfigAndPreset, Error> {
 	let r = client.get_config_spec().await?;
 

@@ -16,7 +16,7 @@ pub use models::{
 /// Establish a connection to a Postgres database
 ///
 /// # Environment requirements
-/// `DATABASE_URL`: "postgres:<username>:<password>:<host_url>:<port>/<db_name>"
+/// DATABASE_URL="postgres:<username>:<password>:<host_url>:<port>/<db_name>"
 pub fn establish_connection() -> PgConnection {
 	let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 	PgConnection::establish(&database_url)
