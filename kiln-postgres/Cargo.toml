@@ -1,0 +1,7 @@
+[package]
+edition = "2021"
+name    = "kiln-postgres"
+version = "0.1.0"
+
+[dependencies]
+diesel = { version = "1.4.8", features = ["postgres"] }

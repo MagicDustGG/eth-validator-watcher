@@ -1,7 +1,7 @@
 use std::{env, time::Duration};
 
 use eth2::{
-	types::{Slot, StateId, ValidatorData},
+	types::{ConfigAndPreset, Slot, StateId, ValidatorData},
 	BeaconNodeHttpClient, Timeouts,
 };
 use sensitive_url::SensitiveUrl;
@@ -39,4 +39,10 @@ pub async fn get_validators_at_slot(
 		.await?;
 
 	Ok(opt_r.map(|r| r.data))
+}
+
+pub async fn get_config_spec(client: &BeaconNodeHttpClient) -> Result<ConfigAndPreset, Error> {
+	let r = client.get_config_spec().await?;
+
+	Ok(r.data)
 }

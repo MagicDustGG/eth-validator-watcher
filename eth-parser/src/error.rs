@@ -10,6 +10,8 @@ pub enum Error {
 	Sensitive(SensitiveError),
 	Join(JoinError),
 	Diesel(diesel::result::Error),
+	InvalidChainPreset(String),
+	MissingChainName,
 }
 
 impl From<eth2::Error> for Error {
@@ -44,6 +46,14 @@ impl From<diesel::result::Error> for Error {
 
 impl Display for Error {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		write!(f, "{:?}", self)
+		match self {
+			Self::InvalidChainPreset(p) => write!(
+				f,
+				"'{}' preset not supported. Only 'mainnet' is supported",
+				p
+			),
+			Self::MissingChainName => write!(f, "Invalid config. 'config_name' is required."),
+			_ => write!(f, "{:?}", self),
+		}
 	}
 }
