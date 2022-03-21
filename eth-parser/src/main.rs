@@ -29,7 +29,8 @@ async fn bump_slots(
 	from_slot: Option<u64>,
 ) -> Result<u64, Error> {
 	let from_slot = from_slot.unwrap_or_else(|| {
-		Slot::get_highest(&conn.lock().unwrap()).map_or(0, |slot| slot.height() + 1)
+		Slot::get_highest(&conn.lock().unwrap(), "kiln".to_string())
+			.map_or(0, |slot| slot.height() + 1)
 	});
 	let chain_height = beacon_client::get_head_height(client).await?;
 	if from_slot == chain_height {
@@ -42,7 +43,7 @@ async fn bump_slots(
 	);
 
 	for slot_height in from_slot..chain_height + 1 {
-		if Slot::get(&conn.lock().unwrap(), "kiln".to_string(), slot_height).is_none() {
+		if Slot::get(&conn.lock().unwrap(), "kiln".to_string(), slot_height).is_err() {
 			let opt_validators = beacon_client::get_validators_at_slot(client, slot_height).await?;
 			NewSlot::new(
 				"kiln".to_string(),

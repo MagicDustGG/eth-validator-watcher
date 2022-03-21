@@ -1,5 +1,5 @@
 [workspace]
-members = ["eth-parser", "kiln-postgres"]
+members = ["eth-parser", "kiln-postgres", "web-api"]
 
 [patch]
 [patch.crates-io]

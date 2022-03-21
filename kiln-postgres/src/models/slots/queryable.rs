@@ -1,7 +1,10 @@
 use crate::schema::{slots, slots::dsl::slots as dsl_slots};
-use diesel::{ExpressionMethods, Identifiable, PgConnection, QueryDsl, Queryable, RunQueryDsl};
+use diesel::{
+	ExpressionMethods, Identifiable, PgConnection, QueryDsl, QueryResult, Queryable, RunQueryDsl,
+};
+use serde::{Deserialize, Serialize};
 
-#[derive(Queryable, Identifiable, Debug, Clone)]
+#[derive(Queryable, Identifiable, Debug, Clone, Serialize, Deserialize)]
 #[primary_key(spec, height)]
 #[table_name = "slots"]
 pub struct Slot {
@@ -29,18 +32,12 @@ impl Slot {
 	}
 
 	/// Return the highest slot from db
-	pub fn get_highest(conn: &PgConnection) -> Option<Slot> {
-		let query = dsl_slots.order(slots::height.desc()).limit(1);
-		match query.load::<Slot>(conn) {
-			Ok(v) => v.first().cloned(),
-			Err(_) => None,
-		}
+	pub fn get_highest(conn: &PgConnection, chain: String) -> QueryResult<Slot> {
+		dsl_slots.filter(slots::spec.eq(chain)).order(slots::height.desc()).first(conn)
 	}
 
 	/// Return an unique slot from db
-	pub fn get(conn: &PgConnection, spec: String, height: u64) -> Option<Slot> {
-		let query = dsl_slots.find((spec, height as i64));
-
-		query.first(conn).ok()
+	pub fn get(conn: &PgConnection, chain: String, height: u64) -> QueryResult<Slot> {
+		dsl_slots.find((chain, height as i64)).first(conn)
 	}
 }
