@@ -1,5 +1,5 @@
 <div align="center">
-    <h1 align="center">Ethereum Validator Watcher</h1>
+    <h1 align="center">Ethereum Indexer</h1>
   <p align="center">
     <a href="https://magicdust.gg">
         <img src="https://img.shields.io/badge/Website-https%3A%2F%2Fmagicdust.gg-blueviolet">
@@ -22,7 +22,7 @@
             alt="License"></a>            
   </p>
   
-  <h3 align="center">A tool to survey Validators</h3>
+  <h3 align="center"></h3>
 </div>
 
 

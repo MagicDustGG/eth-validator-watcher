@@ -1,6 +1,6 @@
 use diesel::{AsChangeset, Insertable};
 
-use super::schema::slots;
+use crate::schema::slots;
 
 #[derive(Insertable, AsChangeset)]
 #[table_name = "slots"]

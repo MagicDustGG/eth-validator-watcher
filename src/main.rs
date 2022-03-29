@@ -4,6 +4,7 @@ extern crate diesel;
 mod beacon_client;
 mod error;
 mod postgres;
+mod schema;
 
 use std::{
 	sync::{Arc, Mutex},
@@ -15,11 +16,18 @@ use error::*;
 use diesel::PgConnection;
 use dotenv::dotenv;
 use eth2::BeaconNodeHttpClient;
-use log::debug;
+use log::{info, warn};
 
 use crate::postgres::{NewSlot, Slot};
 use tokio::time;
 
+/// Query new and store them on db
+///
+/// All slots between `from_slot` included and the head slot included will be processed.
+/// If `from_slot` is `None`, the highest slot in db + 1 will be used.
+/// If the table is empty querying will start at slot 0.
+///
+/// If a slot is already in db it will be skipped.
 async fn bump_slots(
 	client: &BeaconNodeHttpClient,
 	conn: Arc<Mutex<PgConnection>>,
@@ -30,28 +38,37 @@ async fn bump_slots(
 	});
 	let chain_height = beacon_client::get_head_height(client).await?;
 
-	debug!("Starting db bump, from {} to {}", from_slot, chain_height);
+	info!(
+		"Bumping database from slots {} to {}",
+		from_slot, chain_height
+	);
 	for slot_id in from_slot..chain_height + 1 {
-		debug!("Slot {}", slot_id);
 		if Slot::get(&conn.lock().unwrap(), slot_id).is_none() {
-			let opt_validators = beacon_client::get_validators(client, slot_id).await?;
+			let opt_validators = beacon_client::get_validators_at_slot(client, slot_id).await?;
 			NewSlot::new(slot_id, opt_validators.map(|v| v.len())).upsert(&conn.lock().unwrap())?;
-			debug!("Slot {} saved", slot_id);
+			info!("Saved slot {}", slot_id);
 		}
 	}
 
 	Ok(chain_height)
 }
 
-async fn keep_up_with_chain(
+/// Keep the db up to date with the node
+///
+/// Bump the db up to the node height evey `inteval_duration`
+async fn sync_to_head(
 	client: &BeaconNodeHttpClient,
 	conn: Arc<Mutex<PgConnection>>,
-) -> Result<(), Error> {
-	let mut interval_20_sec = time::interval(Duration::from_secs(20));
+	interval_duration: Duration,
+) -> ! {
+	let mut sync_interval = time::interval(interval_duration);
 
 	loop {
-		interval_20_sec.tick().await;
-		bump_slots(client, conn.clone(), None).await?;
+		sync_interval.tick().await;
+		match bump_slots(client, conn.clone(), None).await {
+			Ok(head) => info!("Database synced up to node. Head slot: {}", head),
+			Err(err) => warn!("Failed to bump slots up to head: {}", err),
+		}
 	}
 }
 
@@ -61,10 +78,9 @@ async fn main() -> Result<(), Error> {
 	env_logger::init();
 
 	let conn = Arc::new(Mutex::new(postgres::establish_connection()));
-	let client = beacon_client::get_client()?;
+	let client = beacon_client::new_kiln_client()?;
 
-	bump_slots(&client, conn.clone(), Some(0)).await?;
-	tokio::spawn(async move { keep_up_with_chain(&client, conn.clone()).await });
+	tokio::spawn(async move { sync_to_head(&client, conn.clone(), Duration::from_secs(20)).await });
 
 	Ok(())
 }
