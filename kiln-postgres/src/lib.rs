@@ -3,7 +3,6 @@ extern crate diesel;
 
 mod models;
 mod schema;
-mod types;
 
 use std::env;
 

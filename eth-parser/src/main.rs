@@ -29,7 +29,7 @@ async fn main() -> Result<(), Error> {
 
 	let spec = client_consensus::get_config_spec(&eth2).await?;
 	let config = spec.config;
-	// Currently we only  handle the mainet preset
+	// Currently we only handle the mainet preset
 	if config.preset_base != "mainnet" {
 		return Err(Error::InvalidChainPreset(config.preset_base))
 	}
