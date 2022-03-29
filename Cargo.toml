@@ -1,10 +1,32 @@
 [package]
 edition = "2021"
-name    = "hello_world"
+name    = "eth-validator-watcher"
 version = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+# Consensus layer
+eth2          = { git = "http://github.com/sigp/lighthouse", branch = "unstable" }
+sensitive_url = { git = "http://github.com/sigp/lighthouse", branch = "unstable" }
+
+# ORM
+diesel = { version = "1.4.8", features = ["mysql"] }
+
+# network
+tokio = { version = "1.17.0", features = ["full"] }
+
+# utils
+dotenv    = "0.15.0"
+itertools = "0.10.3"
+
 
 [dev-dependencies]
+
+[patch]
+[patch.crates-io]
+eth2_serde_utils = { git = "http://github.com/sigp/lighthouse" }
+eth2_ssz         = { git = "http://github.com/sigp/lighthouse" }
+eth2_ssz_types   = { git = "http://github.com/sigp/lighthouse" }
+fixed-hash       = { git = "https://github.com/paritytech/parity-common", rev = "df638ab0885293d21d656dc300d39236b69ce57d" }
+tree_hash        = { git = "http://github.com/sigp/lighthouse" }
