@@ -5,20 +5,18 @@ use diesel::PgConnection;
 use eth2::BeaconNodeHttpClient;
 use kiln_postgres::{NewSlot, Slot};
 
-use crate::{
-	beacon_client,
-	traits::{DbSyncer, SyncError},
-	Error,
-};
+use super::syncer::{DbSyncer, SyncError};
+
+use crate::{client_consensus, Error};
 
 pub(crate) struct ConsensusSyncer(Arc<Mutex<PgConnection>>, BeaconNodeHttpClient);
 
 impl ConsensusSyncer {
 	pub fn new(
 		pg_connection: Arc<Mutex<PgConnection>>,
-		beacon_client: BeaconNodeHttpClient,
+		client_consensus: BeaconNodeHttpClient,
 	) -> ConsensusSyncer {
-		ConsensusSyncer(pg_connection, beacon_client)
+		ConsensusSyncer(pg_connection, client_consensus)
 	}
 }
 
@@ -40,7 +38,7 @@ impl DbSyncer for ConsensusSyncer {
 	}
 
 	async fn get_node_height(&self) -> Result<u64, Error> {
-		beacon_client::get_head_height(&self.node_client()).await
+		client_consensus::get_head_height(&self.node_client()).await
 	}
 
 	fn get_db_height(&self) -> Result<u64, Error> {
@@ -51,11 +49,11 @@ impl DbSyncer for ConsensusSyncer {
 
 	async fn create_new_entry(&self, height: u64) -> Result<(), Error> {
 		// Fetch validators
-		let validators = beacon_client::get_validators_at_slot(&self.node_client(), height)
+		let validators = client_consensus::get_validators_at_slot(&self.node_client(), height)
 			.await?
 			.ok_or(SyncError::NothingAtHeight(height))?;
 		// Fetch block
-		let block = beacon_client::get_block(&self.node_client(), height)
+		let block = client_consensus::get_block(&self.node_client(), height)
 			.await?
 			.ok_or(SyncError::NothingAtHeight(height))?;
 

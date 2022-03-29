@@ -3,7 +3,7 @@ use std::{env::VarError, fmt::Display};
 use sensitive_url::SensitiveError;
 use tokio::task::JoinError;
 
-use crate::traits::SyncError;
+use crate::sync::SyncError;
 
 #[derive(Debug)]
 pub enum Error {

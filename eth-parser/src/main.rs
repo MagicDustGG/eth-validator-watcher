@@ -1,10 +1,8 @@
 mod args;
-mod beacon_client;
-mod consensus_layer;
+mod client_consensus;
+mod client_execution;
 mod error;
-mod execution_layer;
-mod traits;
-mod web3_client;
+mod sync;
 
 use std::{
 	sync::{Arc, Mutex},
@@ -13,12 +11,11 @@ use std::{
 
 use args::Args;
 use clap::StructOpt;
-use consensus_layer::ConsensusSyncer;
 use dotenv::dotenv;
 use error::*;
-use execution_layer::ExecutionSyncer;
 use tokio::join;
-use traits::DbSyncer;
+
+use crate::sync::{ConsensusSyncer, DbSyncer, ExecutionSyncer};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -27,10 +24,10 @@ async fn main() -> Result<(), Error> {
 	let args = Args::parse();
 
 	let conn = Arc::new(Mutex::new(kiln_postgres::establish_connection()));
-	let eth2 = beacon_client::new_client()?;
-	let web3 = web3_client::new_client()?;
+	let eth2 = client_consensus::new_client()?;
+	let web3 = client_execution::new_client()?;
 
-	let spec = beacon_client::get_config_spec(&eth2).await?;
+	let spec = client_consensus::get_config_spec(&eth2).await?;
 	let config = spec.config;
 	if config.preset_base != "mainnet" {
 		return Err(Error::InvalidChainPreset(config.preset_base))
@@ -44,9 +41,9 @@ async fn main() -> Result<(), Error> {
 	let consensus_syncer = ConsensusSyncer::new(conn.clone(), eth2);
 	let execution_syncer = ExecutionSyncer::new(conn.clone(), web3);
 
-	let consensus_handle = consensus_syncer.sync_to_head(args.from_slot(), Duration::from_secs(20));
+	let consensus_handle = consensus_syncer.keep_in_sync(args.from_slot(), Duration::from_secs(20));
 	let execution_handle =
-		execution_syncer.sync_to_head(args.from_block(), Duration::from_secs(20));
+		execution_syncer.keep_in_sync(args.from_block(), Duration::from_secs(20));
 
 	join!(consensus_handle, execution_handle);
 

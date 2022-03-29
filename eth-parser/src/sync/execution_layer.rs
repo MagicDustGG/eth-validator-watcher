@@ -5,10 +5,9 @@ use diesel::PgConnection;
 use kiln_postgres::{ExecBlock, NewExecBlock};
 use web3::{transports::Http, Web3};
 
-use crate::{
-	traits::{DbSyncer, SyncError},
-	web3_client, Error,
-};
+use super::syncer::{DbSyncer, SyncError};
+
+use crate::{client_execution, Error};
 
 pub(crate) struct ExecutionSyncer(Arc<Mutex<PgConnection>>, Web3<Http>);
 
@@ -42,11 +41,11 @@ impl DbSyncer for ExecutionSyncer {
 	}
 
 	async fn get_node_height(&self) -> Result<u64, Error> {
-		web3_client::get_head_height(self.node_client()).await
+		client_execution::get_head_height(self.node_client()).await
 	}
 
 	async fn create_new_entry(&self, height: u64) -> Result<(), Error> {
-		let block = web3_client::get_block(self.node_client(), height)
+		let block = client_execution::get_block(self.node_client(), height)
 			.await?
 			.ok_or(SyncError::NothingAtHeight(height))?;
 

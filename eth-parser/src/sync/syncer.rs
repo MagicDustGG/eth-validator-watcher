@@ -40,7 +40,7 @@ pub trait DbSyncer {
 	/// `interval_duration` and start from the previous registered max height.
 	///
 	/// Existing entries are not updated
-	async fn sync_to_head(&self, from: Option<u64>, interval_duration: Duration) {
+	async fn keep_in_sync(&self, from: Option<u64>, interval_duration: Duration) {
 		let mut sync_interval = time::interval(interval_duration);
 		let mut from = from;
 
@@ -100,7 +100,7 @@ pub trait DbSyncer {
 	/// # Arguments
 	/// * `height`: height of the block to create
 	///
-	/// Called internaly by `sync_to_head`.
+	/// Called internaly by `keep_in_sync`.
 	/// Should fetch data from the node and store them in database.
 	async fn create_new_entry(&self, height: u64) -> Result<(), Error>;
 }
