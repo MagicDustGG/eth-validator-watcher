@@ -1153,6 +1153,7 @@ dependencies = [
 name = "eth-parser"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "diesel",
  "dotenv",
  "env_logger",

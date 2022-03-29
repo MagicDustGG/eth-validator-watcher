@@ -2,7 +2,7 @@ use std::env;
 
 use web3::{
 	transports::Http,
-	types::{Block, BlockId, BlockNumber, H256},
+	types::{Block, BlockId, BlockNumber, Transaction},
 	Web3,
 };
 
@@ -23,9 +23,25 @@ pub fn new_client() -> Result<Web3<Http>, Error> {
 /// Get the block at `height`
 ///
 /// https://eth.wiki/json-rpc/API#eth_getblockbynumber
-pub async fn get_block(client: Web3<Http>, height: u64) -> Result<Option<Block<H256>>, Error> {
+pub async fn get_block(
+	client: Web3<Http>,
+	height: u64,
+) -> Result<Option<Block<Transaction>>, Error> {
 	let block_id = BlockId::Number(BlockNumber::Number(height.into()));
-	let r = client.eth().block(block_id).await?;
+	let opt_r = client.eth().block_with_txs(block_id).await?;
 
-	Ok(r)
+	Ok(opt_r)
+}
+
+/// Get the head block height
+///
+/// https://eth.wiki/json-rpc/API#eth_syncing
+pub async fn get_head_height(client: Web3<Http>) -> Result<u64, Error> {
+	let block_id = BlockId::Number(BlockNumber::Latest);
+	let opt_r = client.eth().block_with_txs(block_id).await?;
+
+	match opt_r {
+		Some(b) => Ok(b.number.unwrap().as_u64()),
+		None => Err(Error::Web3(web3::Error::Internal)),
+	}
 }

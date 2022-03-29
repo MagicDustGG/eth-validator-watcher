@@ -8,7 +8,7 @@ use diesel::{
 use primitive_types::H256;
 use std::io::Write;
 
-#[derive(Debug, PartialEq, FromSqlRow, AsExpression, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, FromSqlRow, AsExpression, Clone, Copy, Hash)]
 #[sql_type = "Binary"]
 pub struct Hash256(H256);
 

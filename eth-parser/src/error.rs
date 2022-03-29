@@ -3,6 +3,8 @@ use std::{env::VarError, fmt::Display};
 use sensitive_url::SensitiveError;
 use tokio::task::JoinError;
 
+use crate::traits::SyncError;
+
 #[derive(Debug)]
 pub enum Error {
 	Eth2(eth2::Error),
@@ -15,6 +17,9 @@ pub enum Error {
 	InvalidChainPreset(String),
 	/// Config name is missing from chain config
 	MissingChainName,
+	/// Config name invalid
+	InvalidChainName,
+	Sync(SyncError),
 }
 
 impl From<eth2::Error> for Error {
@@ -50,6 +55,12 @@ impl From<JoinError> for Error {
 impl From<diesel::result::Error> for Error {
 	fn from(error: diesel::result::Error) -> Self {
 		Error::Diesel(error)
+	}
+}
+
+impl From<SyncError> for Error {
+	fn from(error: SyncError) -> Self {
+		Error::Sync(error)
 	}
 }
 

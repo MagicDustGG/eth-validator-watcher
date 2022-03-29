@@ -17,7 +17,8 @@ web3 = { version = "0.18.0", default-features = false, features = ["http-tls"] }
 diesel = { version = "1.4.8", default-features = false }
 
 # async
-tokio = { version = "1.17.0", features = ["full"] }
+async-trait = "0.1.52"
+tokio       = { version = "1.17.0", features = ["full"] }
 
 # utils
 dotenv     = "0.15.0"

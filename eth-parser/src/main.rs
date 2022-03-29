@@ -1,5 +1,8 @@
 mod beacon_client;
+mod consensus_layer;
 mod error;
+mod execution_layer;
+mod traits;
 mod web3_client;
 
 use std::{
@@ -7,88 +10,14 @@ use std::{
 	time::Duration,
 };
 
+use consensus_layer::ConsensusSyncer;
 use error::*;
 
-use diesel::PgConnection;
 use dotenv::dotenv;
-use eth2::BeaconNodeHttpClient;
-use log::{info, warn};
 
-use kiln_postgres::{NewSlot, NewSpec, Slot};
-use tokio::time;
-
-/// Query new and store them on db
-///
-/// All slots between `from_slot` included and the head slot included will be processed.
-/// If `from_slot` is `None`, the highest slot in db + 1 will be used.
-/// If the table is empty querying will start at slot 0.
-///
-/// If a slot is already in db it will be skipped.
-async fn bump_slots(
-	client: &BeaconNodeHttpClient,
-	conn: Arc<Mutex<PgConnection>>,
-	from_slot: Option<u64>,
-) -> Result<u64, Error> {
-	let from_slot = from_slot.unwrap_or_else(|| {
-		Slot::get_highest(&conn.lock().unwrap(), "kiln".to_string())
-			.map_or(0, |slot| slot.height() + 1)
-	});
-	let chain_height = beacon_client::get_head_height(client).await?;
-	if from_slot == chain_height {
-		return Ok(chain_height)
-	}
-
-	info!(
-		"Bumping database from slots {} to {}",
-		from_slot, chain_height
-	);
-
-	for slot_height in from_slot..chain_height + 1 {
-		if Slot::get(&conn.lock().unwrap(), "kiln".to_string(), slot_height).is_err() {
-			let opt_validators = beacon_client::get_validators_at_slot(client, slot_height).await?;
-			let opt_block = beacon_client::get_block(client, slot_height).await?;
-
-			let block_hash = opt_block.as_ref().and_then(|b| {
-				b.message().body().execution_payload().ok().map(|p| p.block_hash.into_root())
-			});
-			let block_number = opt_block
-				.and_then(|b| b.message().body().execution_payload().ok().map(|p| p.block_number));
-
-			let new_slot = NewSlot::new(
-				"kiln".to_string(),
-				slot_height,
-				opt_validators.map(|v| v.len()),
-				block_hash,
-				block_number,
-			);
-
-			new_slot.upsert(&conn.lock().unwrap())?;
-
-			info!("Saved slot {}", slot_height);
-		}
-	}
-
-	Ok(chain_height)
-}
-
-/// Keep the db up to date with the node
-///
-/// Bump the db up to the node height evey `inteval_duration`
-async fn sync_to_head(
-	client: &BeaconNodeHttpClient,
-	conn: Arc<Mutex<PgConnection>>,
-	interval_duration: Duration,
-) -> ! {
-	let mut sync_interval = time::interval(interval_duration);
-
-	loop {
-		sync_interval.tick().await;
-		match bump_slots(client, conn.clone(), None).await {
-			Ok(head) => info!("Database synced up to node. Head slot: {}", head),
-			Err(err) => warn!("Failed to bump slots up to head: {}", err),
-		}
-	}
-}
+use execution_layer::ExecutionSyncer;
+use tokio::join;
+use traits::DbSyncer;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -97,21 +26,26 @@ async fn main() -> Result<(), Error> {
 
 	let conn = Arc::new(Mutex::new(kiln_postgres::establish_connection()));
 	let eth2 = beacon_client::new_client()?;
-	let _ = web3_client::new_client()?;
+	let web3 = web3_client::new_client()?;
 
 	let spec = beacon_client::get_config_spec(&eth2).await?;
-	let preset = spec.config.preset_base;
-	if preset != "mainnet" {
-		return Err(Error::InvalidChainPreset(preset))
+	let config = spec.config;
+	if config.preset_base != "mainnet" {
+		return Err(Error::InvalidChainPreset(config.preset_base))
+	}
+	match config.config_name {
+		Some(name) if name != "kiln" => return Err(Error::InvalidChainName),
+		None => return Err(Error::MissingChainName),
+		_ => {},
 	}
 
-	NewSpec::new(
-		&spec.config.config_name.ok_or(Error::MissingChainName)?,
-		&preset,
-	)
-	.upsert(&conn.lock().unwrap())?;
+	let consensus_syncer = ConsensusSyncer::new(conn.clone(), eth2);
+	let execution_syncer = ExecutionSyncer::new(conn.clone(), web3);
 
-	sync_to_head(&eth2, conn.clone(), Duration::from_secs(20)).await;
+	let consensus_handle = consensus_syncer.sync_to_head(None, Duration::from_secs(20));
+	let execution_handle = execution_syncer.sync_to_head(None, Duration::from_secs(20));
+
+	join!(consensus_handle, execution_handle);
 
 	Ok(())
 }

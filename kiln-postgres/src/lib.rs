@@ -9,10 +9,7 @@ use std::env;
 
 use diesel::{Connection, PgConnection};
 
-pub use models::{
-	slots::{NewSlot, Slot},
-	specs::NewSpec,
-};
+pub use models::*;
 
 /// Establish a connection to a Postgres database
 ///

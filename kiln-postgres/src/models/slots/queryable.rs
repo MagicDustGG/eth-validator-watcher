@@ -9,23 +9,21 @@ use primitive_types::H256;
 use serde::{Deserialize, Serialize};
 
 #[derive(Queryable, Identifiable)]
-#[primary_key(spec, height)]
+#[primary_key(height)]
 #[table_name = "slots"]
 struct DbSlot {
 	// postgresql doesn't support unsigned types
 	// all u64 are stored as i64 and converted back when used
-	spec: String,
 	height: i64,
-	validators_count: Option<i64>,
+	validators_count: i64,
 	block_hash: Option<Hash256>,
 	block_number: Option<i64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Slot {
-	spec: String,
 	height: u64,
-	validators_count: Option<u64>,
+	validators_count: u64,
 	block_hash: Option<H256>,
 	block_number: Option<u64>,
 }
@@ -33,9 +31,8 @@ pub struct Slot {
 impl From<DbSlot> for Slot {
 	fn from(db_slot: DbSlot) -> Self {
 		Slot {
-			spec: db_slot.spec,
 			height: db_slot.height as u64,
-			validators_count: db_slot.validators_count.map(|c| c as u64),
+			validators_count: db_slot.validators_count as u64,
 			block_hash: db_slot.block_hash.map(|h| h.into()),
 			block_number: db_slot.block_number.map(|n| n as u64),
 		}
@@ -48,13 +45,8 @@ impl Slot {
 		self.height
 	}
 
-	/// Return the spec of the slot
-	pub fn spec(&self) -> String {
-		self.spec.clone()
-	}
-
 	/// Return the validator count of the slot
-	pub fn validators_count(&self) -> Option<u64> {
+	pub fn validators_count(&self) -> u64 {
 		self.validators_count
 	}
 
@@ -69,18 +61,15 @@ impl Slot {
 	}
 
 	/// Return the highest slot from db
-	pub fn get_highest(conn: &PgConnection, chain: String) -> QueryResult<Slot> {
-		let slot = dsl_slots
-			.filter(slots::spec.eq(chain))
-			.order(slots::height.desc())
-			.first::<DbSlot>(conn)?;
+	pub fn get_highest(conn: &PgConnection) -> QueryResult<Slot> {
+		let slot = dsl_slots.order(slots::height.desc()).first::<DbSlot>(conn)?;
 
 		Ok(slot.into())
 	}
 
 	/// Return an unique slot from db
-	pub fn get(conn: &PgConnection, chain: String, height: u64) -> QueryResult<Slot> {
-		let slot = dsl_slots.find((chain, height as i64)).first::<DbSlot>(conn)?;
+	pub fn get(conn: &PgConnection, height: u64) -> QueryResult<Slot> {
+		let slot = dsl_slots.find(height as i64).first::<DbSlot>(conn)?;
 
 		Ok(slot.into())
 	}
