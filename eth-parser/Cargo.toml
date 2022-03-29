@@ -1,7 +1,9 @@
 [package]
-edition = "2021"
-name    = "eth-parser"
-version = "0.1.0"
+authors     = ["Timothée Delabrouille <timothee@magicdust.gg>"]
+description = "A tool to index post Merge Ethereum chains"
+edition     = "2021"
+name        = "eth-parser"
+version     = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -20,11 +22,16 @@ diesel = { version = "1.4.8", default-features = false }
 async-trait = "0.1.52"
 tokio       = { version = "1.17.0", features = ["full"] }
 
-# utils
-dotenv     = "0.15.0"
+# CLI arguments
+clap = { version = "3.1.6", features = ["derive"] }
+
+# logs
 env_logger = "0.9.0"
-itertools  = "0.10.3"
 log        = "0.4.14"
+
+# utils
+dotenv    = "0.15.0"
+itertools = "0.10.3"
 
 # local
 kiln-postgres = { path = "../kiln-postgres" }

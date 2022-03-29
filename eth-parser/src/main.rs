@@ -1,3 +1,4 @@
+mod args;
 mod beacon_client;
 mod consensus_layer;
 mod error;
@@ -10,11 +11,11 @@ use std::{
 	time::Duration,
 };
 
+use args::Args;
+use clap::StructOpt;
 use consensus_layer::ConsensusSyncer;
-use error::*;
-
 use dotenv::dotenv;
-
+use error::*;
 use execution_layer::ExecutionSyncer;
 use tokio::join;
 use traits::DbSyncer;
@@ -23,6 +24,7 @@ use traits::DbSyncer;
 async fn main() -> Result<(), Error> {
 	dotenv().ok();
 	env_logger::init();
+	let args = Args::parse();
 
 	let conn = Arc::new(Mutex::new(kiln_postgres::establish_connection()));
 	let eth2 = beacon_client::new_client()?;
@@ -42,8 +44,9 @@ async fn main() -> Result<(), Error> {
 	let consensus_syncer = ConsensusSyncer::new(conn.clone(), eth2);
 	let execution_syncer = ExecutionSyncer::new(conn.clone(), web3);
 
-	let consensus_handle = consensus_syncer.sync_to_head(None, Duration::from_secs(20));
-	let execution_handle = execution_syncer.sync_to_head(None, Duration::from_secs(20));
+	let consensus_handle = consensus_syncer.sync_to_head(args.from_slot(), Duration::from_secs(20));
+	let execution_handle =
+		execution_syncer.sync_to_head(args.from_block(), Duration::from_secs(20));
 
 	join!(consensus_handle, execution_handle);
 

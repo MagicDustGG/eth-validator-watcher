@@ -496,9 +496,39 @@ dependencies = [
  "atty",
  "bitflags",
  "strsim 0.8.0",
- "textwrap",
+ "textwrap 0.11.0",
  "unicode-width",
  "vec_map",
+]
+
+[[package]]
+name = "clap"
+version = "3.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d8c93436c21e4698bacadf42917db28b23017027a4deccb35dbe47a7e7840123"
+dependencies = [
+ "atty",
+ "bitflags",
+ "clap_derive",
+ "indexmap",
+ "lazy_static",
+ "os_str_bytes",
+ "strsim 0.10.0",
+ "termcolor",
+ "textwrap 0.15.0",
+]
+
+[[package]]
+name = "clap_derive"
+version = "3.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da95d038ede1a964ce99f49cbe27a7fb538d1da595e4b4f70b8c8f338d17bf16"
+dependencies = [
+ "heck 0.4.0",
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -506,7 +536,7 @@ name = "clap_utils"
 version = "0.1.0"
 source = "git+http://github.com/sigp/lighthouse?branch=unstable#9bc9527998581deb5fd8674052bb2083b640bbbd"
 dependencies = [
- "clap",
+ "clap 2.34.0",
  "dirs",
  "eth2_network_config",
  "eth2_ssz",
@@ -931,7 +961,7 @@ name = "directory"
 version = "0.1.0"
 source = "git+http://github.com/sigp/lighthouse?branch=unstable#9bc9527998581deb5fd8674052bb2083b640bbbd"
 dependencies = [
- "clap",
+ "clap 2.34.0",
  "clap_utils",
  "eth2_network_config",
 ]
@@ -1154,6 +1184,7 @@ name = "eth-parser"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "clap 3.1.6",
  "diesel",
  "dotenv",
  "env_logger",
@@ -3299,6 +3330,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "os_str_bytes"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8e22443d1643a904602595ba1cd8f7d896afe56d26712531c5ff73a15b2fbf64"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
 name = "owning_ref"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5164,6 +5204,12 @@ checksum = "d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060"
 dependencies = [
  "unicode-width",
 ]
+
+[[package]]
+name = "textwrap"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1141d4d61095b28419e22cb0bbf02755f5e54e0526f97f1e3d1d160e60885fb"
 
 [[package]]
 name = "thiserror"

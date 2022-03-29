@@ -1,4 +1,5 @@
 [package]
+authors = ["Timothée Delabrouille <timothee@magicdust.gg>"]
 edition = "2021"
 name    = "kiln-postgres"
 version = "0.1.0"
