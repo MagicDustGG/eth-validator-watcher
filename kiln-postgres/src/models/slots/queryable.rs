@@ -1,24 +1,51 @@
-use crate::schema::{slots, slots::dsl::slots as dsl_slots};
+use crate::{
+	schema::{slots, slots::dsl::slots as dsl_slots},
+	types::Hash256,
+};
 use diesel::{
 	ExpressionMethods, Identifiable, PgConnection, QueryDsl, QueryResult, Queryable, RunQueryDsl,
 };
+use primitive_types::H256;
 use serde::{Deserialize, Serialize};
 
-#[derive(Queryable, Identifiable, Debug, Clone, Serialize, Deserialize)]
+#[derive(Queryable, Identifiable)]
 #[primary_key(spec, height)]
 #[table_name = "slots"]
-pub struct Slot {
+struct DbSlot {
 	// postgresql doesn't support unsigned types
 	// all u64 are stored as i64 and converted back when used
 	spec: String,
 	height: i64,
 	validators_count: Option<i64>,
+	block_hash: Option<Hash256>,
+	block_number: Option<i64>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Slot {
+	spec: String,
+	height: u64,
+	validators_count: Option<u64>,
+	block_hash: Option<H256>,
+	block_number: Option<u64>,
+}
+
+impl From<DbSlot> for Slot {
+	fn from(db_slot: DbSlot) -> Self {
+		Slot {
+			spec: db_slot.spec,
+			height: db_slot.height as u64,
+			validators_count: db_slot.validators_count.map(|c| c as u64),
+			block_hash: db_slot.block_hash.map(|h| h.into()),
+			block_number: db_slot.block_number.map(|n| n as u64),
+		}
+	}
 }
 
 impl Slot {
 	/// Return the height of the slot
 	pub fn height(&self) -> u64 {
-		self.height as u64
+		self.height
 	}
 
 	/// Return the spec of the slot
@@ -28,16 +55,33 @@ impl Slot {
 
 	/// Return the validator count of the slot
 	pub fn validators_count(&self) -> Option<u64> {
-		self.validators_count.map(|c| c as u64)
+		self.validators_count
+	}
+
+	/// Return the hash of the slot's execution block
+	pub fn block_hash(&self) -> Option<H256> {
+		self.block_hash
+	}
+
+	/// Return the number of the slot's execution block
+	pub fn block_number(&self) -> Option<u64> {
+		self.block_number
 	}
 
 	/// Return the highest slot from db
 	pub fn get_highest(conn: &PgConnection, chain: String) -> QueryResult<Slot> {
-		dsl_slots.filter(slots::spec.eq(chain)).order(slots::height.desc()).first(conn)
+		let slot = dsl_slots
+			.filter(slots::spec.eq(chain))
+			.order(slots::height.desc())
+			.first::<DbSlot>(conn)?;
+
+		Ok(slot.into())
 	}
 
 	/// Return an unique slot from db
 	pub fn get(conn: &PgConnection, chain: String, height: u64) -> QueryResult<Slot> {
-		dsl_slots.find((chain, height as i64)).first(conn)
+		let slot = dsl_slots.find((chain, height as i64)).first::<DbSlot>(conn)?;
+
+		Ok(slot.into())
 	}
 }

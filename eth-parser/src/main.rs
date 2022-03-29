@@ -46,12 +46,24 @@ async fn bump_slots(
 	for slot_height in from_slot..chain_height + 1 {
 		if Slot::get(&conn.lock().unwrap(), "kiln".to_string(), slot_height).is_err() {
 			let opt_validators = beacon_client::get_validators_at_slot(client, slot_height).await?;
-			NewSlot::new(
+			let opt_block = beacon_client::get_block(client, slot_height).await?;
+
+			let block_hash = opt_block.as_ref().and_then(|b| {
+				b.message().body().execution_payload().ok().map(|p| p.block_hash.into_root())
+			});
+			let block_number = opt_block
+				.and_then(|b| b.message().body().execution_payload().ok().map(|p| p.block_number));
+
+			let new_slot = NewSlot::new(
 				"kiln".to_string(),
 				slot_height,
 				opt_validators.map(|v| v.len()),
-			)
-			.upsert(&conn.lock().unwrap())?;
+				block_hash,
+				block_number,
+			);
+
+			new_slot.upsert(&conn.lock().unwrap())?;
+
 			info!("Saved slot {}", slot_height);
 		}
 	}

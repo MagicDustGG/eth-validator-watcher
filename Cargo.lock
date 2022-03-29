@@ -2242,6 +2242,7 @@ name = "kiln-postgres"
 version = "0.1.0"
 dependencies = [
  "diesel",
+ "primitive-types 0.10.1",
  "serde",
 ]
 
