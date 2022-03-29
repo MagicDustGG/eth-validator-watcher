@@ -20,6 +20,7 @@ impl NewSlot {
 	pub fn id(&self) -> u64 {
 		self.id as u64
 	}
+
 	pub fn validators_count(&self) -> Option<u64> {
 		self.validators_count.map(|c| c as u64)
 	}
