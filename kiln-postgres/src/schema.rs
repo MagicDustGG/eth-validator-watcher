@@ -3,7 +3,7 @@ table! {
 		spec -> Varchar,
 		height -> Int8,
 		validators_count -> Nullable<Int8>,
-		block_hash -> Nullable<Varchar>,
+		block_hash -> Nullable<Bytea>,
 		block_number -> Nullable<Int8>,
 	}
 }
