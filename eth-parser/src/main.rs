@@ -29,9 +29,12 @@ async fn main() -> Result<(), Error> {
 
 	let spec = client_consensus::get_config_spec(&eth2).await?;
 	let config = spec.config;
+	// Currently we only  handle the mainet preset
 	if config.preset_base != "mainnet" {
 		return Err(Error::InvalidChainPreset(config.preset_base))
 	}
+	// Handling multiple chains would add a lot of complexity in database (each block must reference
+	// the chain it's related to). Only handling Kiln is all we need right now
 	match config.config_name {
 		Some(name) if name != "kiln" => return Err(Error::InvalidChainName),
 		None => return Err(Error::MissingChainName),
@@ -41,11 +44,11 @@ async fn main() -> Result<(), Error> {
 	let consensus_syncer = ConsensusSyncer::new(conn.clone(), eth2);
 	let execution_syncer = ExecutionSyncer::new(conn.clone(), web3);
 
-	let consensus_handle = consensus_syncer.keep_in_sync(args.from_slot(), Duration::from_secs(20));
-	let execution_handle =
-		execution_syncer.keep_in_sync(args.from_block(), Duration::from_secs(20));
-
-	join!(consensus_handle, execution_handle);
+	// Never return due to infinite loops
+	join!(
+		consensus_syncer.keep_in_sync(args.from_slot(), Duration::from_secs(20)),
+		execution_syncer.keep_in_sync(args.from_block(), Duration::from_secs(20))
+	);
 
 	Ok(())
 }
