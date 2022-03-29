@@ -2,8 +2,8 @@ use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 use diesel::PgConnection;
-use kiln_postgres::{ExecBlock, NewExecBlock};
-use web3::{transports::Http, Web3};
+use kiln_postgres::{ExecBlock, NewExecBlock, NewTransaction, NewTransactions};
+use web3::{transports::Http, types::Transaction, Web3};
 
 use super::syncer::{DbSyncer, SyncError};
 
@@ -45,10 +45,12 @@ impl DbSyncer for ExecutionSyncer {
 	}
 
 	async fn create_new_entry(&self, height: u64) -> Result<(), Error> {
+		// Get block from client
 		let block = client_execution::get_block(self.node_client(), height)
 			.await?
 			.ok_or(SyncError::NothingAtHeight(height))?;
 
+		// Handle and insert block
 		let new_block = NewExecBlock::new(
 			block.hash.ok_or(SyncError::PendingBlock(height))?,
 			block.number.ok_or(SyncError::PendingBlock(height))?.as_u64(),
@@ -57,8 +59,23 @@ impl DbSyncer for ExecutionSyncer {
 			block.transactions_root,
 			block.receipts_root,
 		);
-
 		new_block.insert(&self.db_conn().lock().unwrap())?;
+
+		// Handle and insert transactions
+		let new_transactions: NewTransactions = block
+			.transactions
+			.into_iter()
+			.map(|t: Transaction| {
+				NewTransaction::new(
+					t.hash,
+					t.block_hash.unwrap(),
+					t.transaction_index.unwrap().as_u64(),
+					t.from,
+					t.to,
+				)
+			})
+			.collect();
+		new_transactions.batch_insert(&self.db_conn().lock().unwrap())?;
 
 		Ok(())
 	}

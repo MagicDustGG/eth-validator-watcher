@@ -1,6 +1,6 @@
-pub(crate) mod execution_blocks;
-pub(crate) mod slots;
-pub(crate) mod transactions;
+mod execution_blocks;
+mod slots;
+mod transactions;
 mod types;
 
 pub use execution_blocks::*;

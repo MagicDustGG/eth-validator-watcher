@@ -1,3 +1,5 @@
-pub(crate) mod insertable;
+mod insertable;
+mod queryable;
 
 pub use insertable::*;
+pub use queryable::*;

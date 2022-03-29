@@ -21,7 +21,7 @@ table! {
 table! {
 	transactions (hash) {
 		hash -> Bytea,
-		block_hash -> Nullable<Bytea>,
+		block_hash -> Bytea,
 		index -> Int8,
 		from -> Nullable<Bytea>,
 		to -> Nullable<Bytea>,

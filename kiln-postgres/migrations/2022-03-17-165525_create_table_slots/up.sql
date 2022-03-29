@@ -5,4 +5,4 @@ CREATE TABLE slots (
     validators_count BIGINT NOT NULL,
     block_hash BYTEA,
     block_number BIGINT
-)
+);
