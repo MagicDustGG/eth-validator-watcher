@@ -59,7 +59,7 @@ pub trait DbSyncer {
 				chain_height
 			);
 
-			for height in from_height..chain_height + 1 {
+			for height in from_height..=chain_height {
 				self.create_new_entry(height).await?;
 				info!("{}: Saved entry at height {}", self.name(), height);
 			}
