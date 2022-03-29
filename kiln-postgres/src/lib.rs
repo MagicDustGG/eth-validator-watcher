@@ -1,12 +1,17 @@
-mod models;
+#[macro_use]
+extern crate diesel;
 
-mod slots;
+mod models;
+mod schema;
 
 use std::env;
 
 use diesel::{Connection, PgConnection};
 
-pub use models::{NewSlot, Slot};
+pub use models::{
+	slots::{NewSlot, Slot},
+	specs::NewSpec,
+};
 
 /// Establish a connection to a Postgres database
 ///
