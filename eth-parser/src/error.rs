@@ -6,6 +6,7 @@ use tokio::task::JoinError;
 #[derive(Debug)]
 pub enum Error {
 	Eth2(eth2::Error),
+	Web3(web3::Error),
 	Var(VarError),
 	Sensitive(SensitiveError),
 	Join(JoinError),
@@ -19,6 +20,12 @@ pub enum Error {
 impl From<eth2::Error> for Error {
 	fn from(error: eth2::Error) -> Self {
 		Error::Eth2(error)
+	}
+}
+
+impl From<web3::Error> for Error {
+	fn from(error: web3::Error) -> Self {
+		Error::Web3(error)
 	}
 }
 

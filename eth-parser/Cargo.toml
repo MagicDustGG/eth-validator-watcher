@@ -10,6 +10,9 @@ version = "0.1.0"
 eth2          = { git = "http://github.com/sigp/lighthouse", branch = "unstable" }
 sensitive_url = { git = "http://github.com/sigp/lighthouse", branch = "unstable" }
 
+# Execution layer
+web3 = { version = "0.18.0", default-features = false, features = ["http-tls"] }
+
 # ORM
 diesel = { version = "1.4.8", default-features = false }
 

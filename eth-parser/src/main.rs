@@ -1,5 +1,6 @@
 mod beacon_client;
 mod error;
+mod web3_client;
 
 use std::{
 	sync::{Arc, Mutex},
@@ -83,9 +84,10 @@ async fn main() -> Result<(), Error> {
 	env_logger::init();
 
 	let conn = Arc::new(Mutex::new(kiln_postgres::establish_connection()));
-	let client = beacon_client::new_kiln_client()?;
+	let eth2 = beacon_client::new_client()?;
+	let _ = web3_client::new_client()?;
 
-	let spec = beacon_client::get_config_spec(&client).await?;
+	let spec = beacon_client::get_config_spec(&eth2).await?;
 	let preset = spec.config.preset_base;
 	if preset != "mainnet" {
 		return Err(Error::InvalidChainPreset(preset))
@@ -97,7 +99,7 @@ async fn main() -> Result<(), Error> {
 	)
 	.upsert(&conn.lock().unwrap())?;
 
-	sync_to_head(&client, conn.clone(), Duration::from_secs(20)).await;
+	sync_to_head(&eth2, conn.clone(), Duration::from_secs(20)).await;
 
 	Ok(())
 }
