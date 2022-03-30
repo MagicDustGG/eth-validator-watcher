@@ -5,11 +5,11 @@ use primitive_types::H256;
 use serde::{Deserialize, Serialize};
 
 use crate::{
+	models::Hash256,
 	schema::{
 		execution_blocks,
 		execution_blocks::{dsl::execution_blocks as dsl_blocks, number},
 	},
-	types::Hash256,
 };
 
 #[derive(Queryable, Identifiable)]

@@ -1,6 +1,6 @@
 use crate::{
+	models::Hash256,
 	schema::{slots, slots::dsl::slots as dsl_slots},
-	types::Hash256,
 };
 use diesel::{
 	ExpressionMethods, Identifiable, PgConnection, QueryDsl, QueryResult, Queryable, RunQueryDsl,

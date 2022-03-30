@@ -1,8 +1,8 @@
-use crate::{diesel::RunQueryDsl, types::Hash256};
+use crate::diesel::RunQueryDsl;
 use diesel::{Insertable, PgConnection, QueryResult};
 use primitive_types::H256;
 
-use crate::schema::execution_blocks;
+use crate::{models::Hash256, schema::execution_blocks};
 
 #[derive(Insertable)]
 #[table_name = "execution_blocks"]

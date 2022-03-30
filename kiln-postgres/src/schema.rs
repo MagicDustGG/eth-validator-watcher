@@ -18,4 +18,16 @@ table! {
 	}
 }
 
-allow_tables_to_appear_in_same_query!(execution_blocks, slots,);
+table! {
+	transactions (hash) {
+		hash -> Bytea,
+		block_hash -> Bytea,
+		index -> Int8,
+		from -> Nullable<Bytea>,
+		to -> Nullable<Bytea>,
+	}
+}
+
+joinable!(transactions -> execution_blocks (block_hash));
+
+allow_tables_to_appear_in_same_query!(execution_blocks, slots, transactions,);

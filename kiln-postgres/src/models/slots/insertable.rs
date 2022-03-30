@@ -1,8 +1,7 @@
-use crate::{diesel::RunQueryDsl, types::Hash256};
-use diesel::{Insertable, PgConnection, QueryResult};
+use diesel::{Insertable, PgConnection, QueryResult, RunQueryDsl};
 use primitive_types::H256;
 
-use crate::schema::slots;
+use crate::{models::Hash256, schema::slots};
 
 /// Representation of a row to be inserted
 #[derive(Insertable)]
