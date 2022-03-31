@@ -1,21 +1,17 @@
-use std::{
-	fmt::Display,
-	sync::{Arc, Mutex},
-};
+use std::fmt::Display;
 
 use async_trait::async_trait;
-use diesel::PgConnection;
-use kiln_postgres::{ExecBlock, NewExecBlock, NewTransaction, NewTransactions};
+use kiln_postgres::{ExecBlock, NewExecBlock, NewTransaction, NewTransactions, PgConnectionPool};
 use web3::{transports::Http, types::Transaction, Web3};
 
 use super::syncer::{DbSyncer, SyncError};
 
 use crate::{client_execution, Error};
 
-pub(crate) struct ExecutionSyncer(Arc<Mutex<PgConnection>>, Web3<Http>);
+pub(crate) struct ExecutionSyncer(PgConnectionPool, Web3<Http>);
 
 impl ExecutionSyncer {
-	pub fn new(conn: Arc<Mutex<PgConnection>>, client: Web3<Http>) -> ExecutionSyncer {
+	pub fn new(conn: PgConnectionPool, client: Web3<Http>) -> ExecutionSyncer {
 		ExecutionSyncer(conn, client)
 	}
 }
@@ -28,19 +24,14 @@ impl Display for ExecutionSyncer {
 
 #[async_trait]
 impl DbSyncer for ExecutionSyncer {
-	type DbConnection = PgConnection;
 	type NodeClient = Web3<Http>;
-
-	fn db_conn(&self) -> Arc<Mutex<Self::DbConnection>> {
-		self.0.clone()
-	}
 
 	fn node_client(&self) -> Self::NodeClient {
 		self.1.clone()
 	}
 
 	fn get_db_height(&self) -> Result<u64, Error> {
-		let block = ExecBlock::get_highest(&self.db_conn().lock().unwrap())?;
+		let block = ExecBlock::get_highest(&self.0.get().unwrap())?;
 
 		Ok(block.number())
 	}
@@ -64,7 +55,7 @@ impl DbSyncer for ExecutionSyncer {
 			block.transactions_root,
 			block.receipts_root,
 		);
-		new_block.insert(&self.db_conn().lock().unwrap())?;
+		new_block.insert(&self.0.get().unwrap())?;
 
 		// Handle and insert transactions
 		let new_transactions: NewTransactions = block
@@ -80,7 +71,7 @@ impl DbSyncer for ExecutionSyncer {
 				)
 			})
 			.collect();
-		new_transactions.batch_insert(&self.db_conn().lock().unwrap())?;
+		new_transactions.batch_insert(&self.0.get().unwrap())?;
 
 		Ok(())
 	}

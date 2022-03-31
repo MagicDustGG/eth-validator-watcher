@@ -1,11 +1,6 @@
-use std::{
-	fmt::Display,
-	sync::{Arc, Mutex},
-	time::Duration,
-};
+use std::{fmt::Display, time::Duration};
 
 use async_trait::async_trait;
-use diesel::Connection;
 use log::{info, warn};
 use tokio::time;
 
@@ -23,7 +18,6 @@ pub enum SyncError {
 
 #[async_trait]
 pub trait DbSyncer: Display {
-	type DbConnection: Connection;
 	type NodeClient;
 
 	/// Keep database synced with the node
@@ -76,8 +70,6 @@ pub trait DbSyncer: Display {
 		}
 	}
 
-	/// Return a thread safe shared connection to the database
-	fn db_conn(&self) -> Arc<Mutex<Self::DbConnection>>;
 	/// Return a instance of the node client
 	fn node_client(&self) -> Self::NodeClient;
 

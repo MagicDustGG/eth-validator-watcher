@@ -1,9 +1,8 @@
 use diesel::{
-	deserialize,
+	deserialize::{self, FromSql},
 	pg::Pg,
-	serialize::{self, IsNull, Output},
+	serialize::{self, IsNull, Output, ToSql},
 	sql_types::Binary,
-	types::{FromSql, ToSql},
 };
 use primitive_types::{H160, H256};
 use std::io::Write;

@@ -4,10 +4,7 @@ mod client_execution;
 mod error;
 mod sync;
 
-use std::{
-	sync::{Arc, Mutex},
-	time::Duration,
-};
+use std::time::Duration;
 
 use args::Args;
 use clap::StructOpt;
@@ -23,7 +20,7 @@ async fn main() -> Result<(), Error> {
 	env_logger::init();
 	let args = Args::parse();
 
-	let conn = Arc::new(Mutex::new(kiln_postgres::establish_connection()));
+	let conn_pool = kiln_postgres::connexion_pool();
 	let eth2 = client_consensus::new_client()?;
 	let web3 = client_execution::new_client()?;
 
@@ -41,14 +38,14 @@ async fn main() -> Result<(), Error> {
 		_ => {},
 	}
 
-	let consensus_syncer = ConsensusSyncer::new(conn.clone(), eth2.clone());
-	let execution_syncer = ExecutionSyncer::new(conn.clone(), web3);
+	let consensus_syncer = ConsensusSyncer::new(conn_pool.clone(), eth2.clone());
+	let execution_syncer = ExecutionSyncer::new(conn_pool.clone(), web3);
 
 	// Never return due to infinite loops
 	join!(
 		consensus_syncer.keep_in_sync(args.from_slot(), Duration::from_secs(20)),
 		execution_syncer.keep_in_sync(args.from_block(), Duration::from_secs(20)),
-		validators::sync_last_validator_state(conn.clone(), eth2, Duration::from_secs(60))
+		validators::sync_last_validator_state(conn_pool.clone(), eth2, Duration::from_secs(60))
 	);
 
 	Ok(())
