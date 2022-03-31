@@ -1,23 +1,19 @@
-use std::{
-	fmt::Display,
-	sync::{Arc, Mutex},
-};
+use std::fmt::Display;
 
 use async_trait::async_trait;
-use diesel::PgConnection;
 use eth2::BeaconNodeHttpClient;
-use kiln_postgres::{NewSlot, Slot};
+use kiln_postgres::{NewSlot, PgConnectionPool, Slot};
 use log::info;
 
 use super::syncer::DbSyncer;
 
 use crate::{client_consensus, Error};
 
-pub(crate) struct ConsensusSyncer(Arc<Mutex<PgConnection>>, BeaconNodeHttpClient);
+pub(crate) struct ConsensusSyncer(PgConnectionPool, BeaconNodeHttpClient);
 
 impl ConsensusSyncer {
 	pub fn new(
-		pg_connection: Arc<Mutex<PgConnection>>,
+		pg_connection: PgConnectionPool,
 		client_consensus: BeaconNodeHttpClient,
 	) -> ConsensusSyncer {
 		ConsensusSyncer(pg_connection, client_consensus)
@@ -32,12 +28,7 @@ impl Display for ConsensusSyncer {
 
 #[async_trait]
 impl DbSyncer for ConsensusSyncer {
-	type DbConnection = PgConnection;
 	type NodeClient = BeaconNodeHttpClient;
-
-	fn db_conn(&self) -> Arc<Mutex<Self::DbConnection>> {
-		self.0.clone()
-	}
 
 	fn node_client(&self) -> Self::NodeClient {
 		self.1.clone()
@@ -48,7 +39,7 @@ impl DbSyncer for ConsensusSyncer {
 	}
 
 	fn get_db_height(&self) -> Result<u64, Error> {
-		let highest_slot = Slot::get_highest(&self.db_conn().lock().unwrap())?;
+		let highest_slot = Slot::get_highest(&self.0.get().unwrap())?;
 
 		Ok(highest_slot.height())
 	}
@@ -77,7 +68,7 @@ impl DbSyncer for ConsensusSyncer {
 		let new_slot = NewSlot::new(height, block_hash, block_number);
 
 		// Write the new slot in database
-		new_slot.insert_do_nothing(&self.db_conn().lock().unwrap())?;
+		new_slot.insert_do_nothing(&self.0.get().unwrap())?;
 
 		Ok(())
 	}

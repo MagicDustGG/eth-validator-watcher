@@ -1,11 +1,7 @@
-use std::{
-	sync::{Arc, Mutex},
-	time::Duration,
-};
+use std::time::Duration;
 
-use diesel::PgConnection;
 use eth2::BeaconNodeHttpClient;
-use kiln_postgres::NewValidators;
+use kiln_postgres::{NewValidators, PgConnectionPool};
 use log::{info, warn};
 use tokio::time;
 
@@ -17,14 +13,14 @@ use super::SyncError;
 ///
 /// Never return due to infinite loop
 pub async fn sync_last_validator_state(
-	conn: Arc<Mutex<PgConnection>>,
+	conn_pool: PgConnectionPool,
 	client: BeaconNodeHttpClient,
 	interval_duration: Duration,
 ) {
 	let mut sync_interval = time::interval(interval_duration);
 	loop {
 		sync_interval.tick().await;
-		match update_validators(conn.clone(), &client).await {
+		match update_validators(conn_pool.clone(), &client).await {
 			Ok(_) => info!("Validators updated"),
 			Err(err) => warn!("Failed to update validators: {err}"),
 		}
@@ -32,7 +28,7 @@ pub async fn sync_last_validator_state(
 }
 
 async fn update_validators(
-	conn: Arc<Mutex<PgConnection>>,
+	conn_pool: PgConnectionPool,
 	client: &BeaconNodeHttpClient,
 ) -> Result<(), Error> {
 	let validators = client_consensus::get_validators_at_head(client)
@@ -40,7 +36,7 @@ async fn update_validators(
 		.ok_or(SyncError::NoValidators)?;
 
 	let new_validators = NewValidators::from_iter(validators.into_iter().map(|v| v.into()));
-	new_validators.batch_upsert(&conn.lock().unwrap())?;
+	new_validators.batch_upsert(&conn_pool.get().unwrap())?;
 
 	Ok(())
 }

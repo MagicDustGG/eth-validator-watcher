@@ -9,8 +9,8 @@ version     = "0.1.0"
 
 [dependencies]
 # Consensus layer
-eth2          = { git = "http://github.com/sigp/lighthouse", branch = "unstable" }
-sensitive_url = { git = "http://github.com/sigp/lighthouse", branch = "unstable" }
+eth2          = { git = "http://github.com/sigp/lighthouse", branch = "unstable", default-features = false }
+sensitive_url = { git = "http://github.com/sigp/lighthouse", branch = "unstable", default-features = false }
 
 # Execution layer
 web3 = { version = "0.18.0", default-features = false, features = ["http-tls"] }
@@ -20,7 +20,7 @@ diesel = { version = "1.4.8", default-features = false }
 
 # async
 async-trait = "0.1.52"
-tokio       = { version = "1.17.0", features = ["full"] }
+tokio       = { version = "1.17.0", default-features = false }
 
 # CLI arguments
 clap = { version = "3.1.6", features = ["derive"] }

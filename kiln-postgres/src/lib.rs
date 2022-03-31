@@ -6,16 +6,24 @@ mod schema;
 
 use std::env;
 
-use diesel::{Connection, PgConnection};
+use diesel::{
+	r2d2::{self, ConnectionManager, Pool},
+	PgConnection,
+};
 
 pub use models::*;
 
-/// Establish a connection to a Postgres database
+pub type PgConnectionPool = Pool<ConnectionManager<PgConnection>>;
+
+/// Return a pool of connections to a Postgres instance
 ///
 /// # Environment requirements
 /// DATABASE_URL="postgres:<username>:<password>:<host_url>:<port>/<db_name>"
-pub fn establish_connection() -> PgConnection {
+pub fn connexion_pool() -> PgConnectionPool {
 	let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-	PgConnection::establish(&database_url)
-		.unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
+
+	let manager = r2d2::ConnectionManager::<PgConnection>::new(&database_url);
+
+	r2d2::Pool::new(manager)
+		.unwrap_or_else(|_| panic!("Failed to create a pool for database at {}", database_url))
 }
