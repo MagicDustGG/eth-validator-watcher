@@ -31,14 +31,13 @@ pub async fn get_head_height(client: &BeaconNodeHttpClient) -> Result<u64, Error
 	Ok(ret.data.head_slot.as_u64())
 }
 
-/// Return the list of validators at a given slot
+/// Return the list of validators at head
 ///
 /// https://ethereum.github.io/beacon-APIs/#/Beacon/getStateValidators
-pub async fn get_validators_at_slot(
+pub async fn get_validators_at_head(
 	client: &BeaconNodeHttpClient,
-	slot_id: u64,
 ) -> Result<Option<Vec<ValidatorData>>, Error> {
-	let state_id = StateId::Slot(Slot::new(slot_id));
+	let state_id = StateId::Head;
 	let opt_r = client.get_beacon_states_validators(state_id, None, None).await?;
 
 	Ok(opt_r.map(|r| r.data))
@@ -56,7 +55,6 @@ pub async fn get_config_spec(client: &BeaconNodeHttpClient) -> Result<ConfigAndP
 /// Return the block at `slot_height`
 ///
 /// https://ethereum.github.io/beacon-APIs/#/Beacon/getBlockV2
-#[allow(dead_code)]
 pub async fn get_block(
 	client: &BeaconNodeHttpClient,
 	slot_height: u64,

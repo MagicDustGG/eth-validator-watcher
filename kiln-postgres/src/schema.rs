@@ -12,7 +12,6 @@ table! {
 table! {
 	slots (height) {
 		height -> Int8,
-		validators_count -> Int8,
 		block_hash -> Nullable<Bytea>,
 		block_number -> Nullable<Int8>,
 	}
@@ -28,6 +27,22 @@ table! {
 	}
 }
 
+table! {
+	validators (index) {
+		index -> Int8,
+		balance -> Int8,
+		status -> Varchar,
+		pubkey -> Varchar,
+		withdrawal_credentials -> Bytea,
+		effective_balance -> Int8,
+		slashed -> Bool,
+		activation_eligibility_epoch -> Int8,
+		activation_epoch -> Int8,
+		exit_epoch -> Int8,
+		withdrawable_epoch -> Int8,
+	}
+}
+
 joinable!(transactions -> execution_blocks (block_hash));
 
-allow_tables_to_appear_in_same_query!(execution_blocks, slots, transactions,);
+allow_tables_to_appear_in_same_query!(execution_blocks, slots, transactions, validators,);

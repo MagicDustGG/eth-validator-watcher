@@ -15,7 +15,6 @@ struct DbSlot {
 	// postgresql doesn't support unsigned types
 	// all u64 are stored as i64 and converted back when used
 	height: i64,
-	validators_count: i64,
 	block_hash: Option<Hash256>,
 	block_number: Option<i64>,
 }
@@ -23,7 +22,6 @@ struct DbSlot {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Slot {
 	height: u64,
-	validators_count: u64,
 	block_hash: Option<H256>,
 	block_number: Option<u64>,
 }
@@ -32,7 +30,6 @@ impl From<DbSlot> for Slot {
 	fn from(db_slot: DbSlot) -> Self {
 		Slot {
 			height: db_slot.height as u64,
-			validators_count: db_slot.validators_count as u64,
 			block_hash: db_slot.block_hash.map(|h| h.into()),
 			block_number: db_slot.block_number.map(|n| n as u64),
 		}
@@ -43,11 +40,6 @@ impl Slot {
 	/// Return the height of the slot
 	pub fn height(&self) -> u64 {
 		self.height
-	}
-
-	/// Return the validator count of the slot
-	pub fn validators_count(&self) -> u64 {
-		self.validators_count
 	}
 
 	/// Return the hash of the slot's execution block

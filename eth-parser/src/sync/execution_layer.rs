@@ -1,4 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::{
+	fmt::Display,
+	sync::{Arc, Mutex},
+};
 
 use async_trait::async_trait;
 use diesel::PgConnection;
@@ -17,14 +20,16 @@ impl ExecutionSyncer {
 	}
 }
 
+impl Display for ExecutionSyncer {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(f, "execution syncer")
+	}
+}
+
 #[async_trait]
 impl DbSyncer for ExecutionSyncer {
 	type DbConnection = PgConnection;
 	type NodeClient = Web3<Http>;
-
-	fn name(&self) -> String {
-		"execution Layer".to_owned()
-	}
 
 	fn db_conn(&self) -> Arc<Mutex<Self::DbConnection>> {
 		self.0.clone()
