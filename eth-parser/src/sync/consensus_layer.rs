@@ -1,11 +1,15 @@
-use std::sync::{Arc, Mutex};
+use std::{
+	fmt::Display,
+	sync::{Arc, Mutex},
+};
 
 use async_trait::async_trait;
 use diesel::PgConnection;
 use eth2::BeaconNodeHttpClient;
 use kiln_postgres::{NewSlot, Slot};
+use log::info;
 
-use super::syncer::{DbSyncer, SyncError};
+use super::syncer::DbSyncer;
 
 use crate::{client_consensus, Error};
 
@@ -20,14 +24,16 @@ impl ConsensusSyncer {
 	}
 }
 
+impl Display for ConsensusSyncer {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(f, "consensus syncer")
+	}
+}
+
 #[async_trait]
 impl DbSyncer for ConsensusSyncer {
 	type DbConnection = PgConnection;
 	type NodeClient = BeaconNodeHttpClient;
-
-	fn name(&self) -> String {
-		"consensus layer".to_owned()
-	}
 
 	fn db_conn(&self) -> Arc<Mutex<Self::DbConnection>> {
 		self.0.clone()
@@ -48,14 +54,15 @@ impl DbSyncer for ConsensusSyncer {
 	}
 
 	async fn create_new_entry(&self, height: u64) -> Result<(), Error> {
-		// Fetch validators
-		let validators = client_consensus::get_validators_at_slot(&self.node_client(), height)
-			.await?
-			.ok_or(SyncError::NothingAtHeight(height))?;
 		// Fetch block
-		let block = client_consensus::get_block(&self.node_client(), height)
-			.await?
-			.ok_or(SyncError::NothingAtHeight(height))?;
+		let opt_block = client_consensus::get_block(&self.node_client(), height).await?;
+		let block = match opt_block {
+			Some(b) => b,
+			None => {
+				info!("Slot {height} was missed");
+				return Ok(())
+			},
+		};
 
 		// Retrieve block hash and block number from the block
 		let block_hash = block
@@ -67,7 +74,7 @@ impl DbSyncer for ConsensusSyncer {
 		let block_number = block.message().body().execution_payload().ok().map(|p| p.block_number);
 
 		// Create a new slot
-		let new_slot = NewSlot::new(height, validators.len(), block_hash, block_number);
+		let new_slot = NewSlot::new(height, block_hash, block_number);
 
 		// Write the new slot in database
 		new_slot.insert_do_nothing(&self.db_conn().lock().unwrap())?;

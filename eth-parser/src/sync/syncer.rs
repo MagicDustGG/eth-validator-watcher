@@ -1,4 +1,5 @@
 use std::{
+	fmt::Display,
 	sync::{Arc, Mutex},
 	time::Duration,
 };
@@ -16,10 +17,12 @@ pub enum SyncError {
 	NothingAtHeight(u64),
 	/// The indexed block was pending
 	PendingBlock(u64),
+	/// The client did not return any validators
+	NoValidators,
 }
 
 #[async_trait]
-pub trait DbSyncer {
+pub trait DbSyncer: Display {
 	type DbConnection: Connection;
 	type NodeClient;
 
@@ -52,16 +55,13 @@ pub trait DbSyncer {
 				return Ok(chain_height) as Result<u64, Error>
 			}
 
-			info!(
-				"{}: Bumping database from heigth {} to {}",
-				self.name(),
-				from_height,
-				chain_height
-			);
+			info!("{self}: Bumping database from heigth {from_height} to {chain_height}",);
 
 			for height in from_height..=chain_height {
-				self.create_new_entry(height).await?;
-				info!("{}: Saved entry at height {}", self.name(), height);
+				match self.create_new_entry(height).await {
+					Ok(_) => info!("{self}: Saved entry at height {height}"),
+					Err(err) => warn!("{self}: Failed to create enty at height {height}: {err}"),
+				}
 			}
 
 			Ok(chain_height)
@@ -70,20 +70,11 @@ pub trait DbSyncer {
 		loop {
 			sync_interval.tick().await;
 			match bump(from.take()).await {
-				Ok(head) => info!(
-					"{}: Database synced up to node. Head is {}",
-					self.name(),
-					head
-				),
-				Err(err) => warn!("{}: Failed to bump up to head: {}", self.name(), err),
+				Ok(head) => info!("{self}: Database synced up to node. Head is {head}"),
+				Err(err) => warn!("{self}: Failed to bump up to head: {err}"),
 			}
 		}
 	}
-
-	/// Return the name of the node
-	///
-	/// Used in logs
-	fn name(&self) -> String;
 
 	/// Return a thread safe shared connection to the database
 	fn db_conn(&self) -> Arc<Mutex<Self::DbConnection>>;

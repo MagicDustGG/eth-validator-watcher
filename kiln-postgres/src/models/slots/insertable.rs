@@ -10,22 +10,15 @@ pub struct NewSlot {
 	// postgresql doesn't support unsigned types
 	// all u64 are stored as i64 and converted back when used
 	height: i64,
-	validators_count: i64,
 	block_hash: Option<Hash256>,
 	block_number: Option<i64>,
 }
 
 impl NewSlot {
 	/// Return a new insertable slot
-	pub fn new(
-		height: u64,
-		validators_count: usize,
-		block_hash: Option<H256>,
-		block_number: Option<u64>,
-	) -> NewSlot {
+	pub fn new(height: u64, block_hash: Option<H256>, block_number: Option<u64>) -> NewSlot {
 		NewSlot {
 			height: height as i64,
-			validators_count: validators_count as i64,
 			block_hash: block_hash.map(|h| h.into()),
 			block_number: block_number.map(|n| n as i64),
 		}

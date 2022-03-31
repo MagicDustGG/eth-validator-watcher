@@ -15,7 +15,7 @@ use dotenv::dotenv;
 use error::*;
 use tokio::join;
 
-use crate::sync::{ConsensusSyncer, DbSyncer, ExecutionSyncer};
+use crate::sync::{validators, ConsensusSyncer, DbSyncer, ExecutionSyncer};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -41,13 +41,14 @@ async fn main() -> Result<(), Error> {
 		_ => {},
 	}
 
-	let consensus_syncer = ConsensusSyncer::new(conn.clone(), eth2);
+	let consensus_syncer = ConsensusSyncer::new(conn.clone(), eth2.clone());
 	let execution_syncer = ExecutionSyncer::new(conn.clone(), web3);
 
 	// Never return due to infinite loops
 	join!(
 		consensus_syncer.keep_in_sync(args.from_slot(), Duration::from_secs(20)),
-		execution_syncer.keep_in_sync(args.from_block(), Duration::from_secs(20))
+		execution_syncer.keep_in_sync(args.from_block(), Duration::from_secs(20)),
+		validators::sync_last_validator_state(conn.clone(), eth2, Duration::from_secs(60))
 	);
 
 	Ok(())
