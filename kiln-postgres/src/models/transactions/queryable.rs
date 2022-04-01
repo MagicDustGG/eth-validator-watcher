@@ -1,4 +1,6 @@
-use diesel::{Identifiable, PgConnection, QueryDsl, QueryResult, Queryable, RunQueryDsl};
+use diesel::{
+	ExpressionMethods, Identifiable, PgConnection, QueryDsl, QueryResult, Queryable, RunQueryDsl,
+};
 use primitive_types::{H160, H256};
 use serde::{Deserialize, Serialize};
 
@@ -43,8 +45,24 @@ impl Transaction {
 	/// Return an unique transaction from db
 	pub fn get(conn: &PgConnection, hash: H256) -> QueryResult<Transaction> {
 		let hash: Hash256 = hash.into();
-		let block: DbTransaction = dsl_transactions.find(hash).first(conn)?;
+		let transaction: DbTransaction = dsl_transactions.find(hash).first(conn)?;
 
-		Ok(block.into())
+		Ok(transaction.into())
+	}
+
+	pub fn list_from_address(conn: &PgConnection, address: H160) -> QueryResult<Vec<Transaction>> {
+		let address: Hash160 = address.into();
+
+		let db_transactions: Vec<DbTransaction> =
+			dsl_transactions.filter(transactions::from.eq(address)).load(conn)?;
+
+		let transactions: Vec<Transaction> =
+			db_transactions.into_iter().map(|t| t.into()).collect();
+
+		Ok(transactions)
+	}
+
+	pub fn to(&self) -> Option<H160> {
+		self.to
 	}
 }
