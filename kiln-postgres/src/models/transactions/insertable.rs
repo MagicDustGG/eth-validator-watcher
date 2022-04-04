@@ -14,6 +14,7 @@ pub struct NewTransaction {
 	index: i64,
 	from: Option<Hash160>,
 	to: Option<Hash160>,
+	input: Vec<u8>,
 }
 
 impl NewTransaction {
@@ -24,6 +25,7 @@ impl NewTransaction {
 		index: u64,
 		from: Option<H160>,
 		to: Option<H160>,
+		input: Vec<u8>,
 	) -> NewTransaction {
 		NewTransaction {
 			hash: hash.into(),
@@ -31,6 +33,7 @@ impl NewTransaction {
 			index: index as i64,
 			from: from.map(|f| f.into()),
 			to: to.map(|t| t.into()),
+			input,
 		}
 	}
 

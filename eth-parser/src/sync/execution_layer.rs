@@ -68,6 +68,7 @@ impl DbSyncer for ExecutionSyncer {
 					t.transaction_index.unwrap().as_u64(),
 					t.from,
 					t.to,
+					t.input.0,
 				)
 			})
 			.collect();

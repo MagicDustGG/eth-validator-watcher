@@ -6,6 +6,7 @@ CREATE TABLE transactions(
     "index" BIGINT NOT NULL,
     "from" BYTEA,
     "to" BYTEA,
+    input BYTEA NOT NULL,
     CONSTRAINT fk_block_hash FOREIGN KEY(block_hash) REFERENCES execution_blocks(hash)
 );
 

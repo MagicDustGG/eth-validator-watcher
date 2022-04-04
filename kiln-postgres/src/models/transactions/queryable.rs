@@ -18,6 +18,7 @@ struct DbTransaction {
 	index: i64,
 	from: Option<Hash160>,
 	to: Option<Hash160>,
+	input: Vec<u8>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -27,6 +28,7 @@ pub struct Transaction {
 	index: u64,
 	from: Option<H160>,
 	to: Option<H160>,
+	input: Vec<u8>,
 }
 
 impl From<DbTransaction> for Transaction {
@@ -37,6 +39,7 @@ impl From<DbTransaction> for Transaction {
 			index: db_transaction.index as u64,
 			from: db_transaction.from.map(|f| f.into()),
 			to: db_transaction.to.map(|t| t.into()),
+			input: db_transaction.input,
 		}
 	}
 }
@@ -62,7 +65,13 @@ impl Transaction {
 		Ok(transactions)
 	}
 
+	/// Return the address of the transaction recipient
 	pub fn to(&self) -> Option<H160> {
 		self.to
+	}
+
+	/// Return the transaction input
+	pub fn input(&self) -> Vec<u8> {
+		self.input.clone()
 	}
 }

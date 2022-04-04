@@ -24,6 +24,7 @@ table! {
 		index -> Int8,
 		from -> Nullable<Bytea>,
 		to -> Nullable<Bytea>,
+		input -> Bytea,
 	}
 }
 
