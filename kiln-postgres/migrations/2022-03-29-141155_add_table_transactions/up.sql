@@ -2,12 +2,13 @@
 
 CREATE TABLE transactions(
     "hash" BYTEA PRIMARY KEY,
-    "block_hash" BYTEA NOT NULL,
+    "block_hash" BYTEA NOT NULL REFERENCES execution_blocks(hash),
     "index" BIGINT NOT NULL,
     "from" BYTEA,
     "to" BYTEA,
     input BYTEA NOT NULL,
-    CONSTRAINT fk_block_hash FOREIGN KEY(block_hash) REFERENCES execution_blocks(hash)
+    "value" BYTEA NOT NULL,
+    "status" boolean
 );
 
 CREATE INDEX block_idx

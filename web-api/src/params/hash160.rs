@@ -2,6 +2,7 @@ use hex::FromHexError;
 use primitive_types::H160;
 use rocket::request::FromParam;
 
+#[derive(Clone, Copy)]
 pub struct Hash160(H160);
 
 #[derive(Debug)]

@@ -2,7 +2,7 @@ use std::env;
 
 use web3::{
 	transports::Http,
-	types::{Block, BlockId, BlockNumber, Transaction},
+	types::{Block, BlockId, BlockNumber, Transaction, TransactionReceipt, H256},
 	Web3,
 };
 
@@ -19,7 +19,6 @@ pub fn new_client() -> Result<Web3<Http>, Error> {
 	Ok(web3::Web3::new(url))
 }
 
-#[allow(dead_code)]
 /// Get the block at `height`
 ///
 /// https://eth.wiki/json-rpc/API#eth_getblockbynumber
@@ -33,15 +32,14 @@ pub async fn get_block(
 	Ok(opt_r)
 }
 
-/// Get the head block height
+/// Get the receipt of transaction `hash`
 ///
-/// https://eth.wiki/json-rpc/API#eth_syncing
-pub async fn get_head_height(client: Web3<Http>) -> Result<u64, Error> {
-	let block_id = BlockId::Number(BlockNumber::Latest);
-	let opt_r = client.eth().block_with_txs(block_id).await?;
+/// https://eth.wiki/json-rpc/API#eth_gettransactionreceipt
+pub async fn get_transaction_receipt(
+	client: Web3<Http>,
+	hash: H256,
+) -> Result<Option<TransactionReceipt>, Error> {
+	let receip = client.eth().transaction_receipt(hash).await?;
 
-	match opt_r {
-		Some(b) => Ok(b.number.unwrap().as_u64()),
-		None => Err(Error::Web3(web3::Error::Internal)),
-	}
+	Ok(receip)
 }

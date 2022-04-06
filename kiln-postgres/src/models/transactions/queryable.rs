@@ -1,7 +1,7 @@
 use diesel::{
 	ExpressionMethods, Identifiable, PgConnection, QueryDsl, QueryResult, Queryable, RunQueryDsl,
 };
-use primitive_types::{H160, H256};
+use primitive_types::{H160, H256, U256};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -19,6 +19,8 @@ struct DbTransaction {
 	from: Option<Hash160>,
 	to: Option<Hash160>,
 	input: Vec<u8>,
+	value: Vec<u8>,
+	status: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -29,6 +31,8 @@ pub struct Transaction {
 	from: Option<H160>,
 	to: Option<H160>,
 	input: Vec<u8>,
+	value: U256,
+	status: Option<bool>,
 }
 
 impl From<DbTransaction> for Transaction {
@@ -40,19 +44,13 @@ impl From<DbTransaction> for Transaction {
 			from: db_transaction.from.map(|f| f.into()),
 			to: db_transaction.to.map(|t| t.into()),
 			input: db_transaction.input,
+			value: U256::from_little_endian(&db_transaction.value),
+			status: db_transaction.status,
 		}
 	}
 }
 
 impl Transaction {
-	/// Return an unique transaction from db
-	pub fn get(conn: &PgConnection, hash: H256) -> QueryResult<Transaction> {
-		let hash: Hash256 = hash.into();
-		let transaction: DbTransaction = dsl_transactions.find(hash).first(conn)?;
-
-		Ok(transaction.into())
-	}
-
 	pub fn list_from_address(conn: &PgConnection, address: H160) -> QueryResult<Vec<Transaction>> {
 		let address: Hash160 = address.into();
 

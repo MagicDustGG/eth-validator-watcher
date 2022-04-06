@@ -2,6 +2,7 @@ use hex::FromHexError;
 use primitive_types::H256;
 use rocket::request::FromParam;
 
+#[derive(Clone, Copy)]
 pub struct Hash256(H256);
 
 #[derive(Debug)]

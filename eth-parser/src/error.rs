@@ -13,13 +13,15 @@ pub enum Error {
 	Sensitive(SensitiveError),
 	Join(JoinError),
 	Diesel(diesel::result::Error),
+	Sync(SyncError),
 	/// Chain preset not supported
 	InvalidChainPreset(String),
 	/// Config name is missing from chain config
 	MissingChainName,
 	/// Config name invalid
 	InvalidChainName,
-	Sync(SyncError),
+	/// Cannot use a pre merge slot (height < 29151) as freeze slot
+	PreMergeFreezeSlot,
 }
 
 impl From<eth2::Error> for Error {
