@@ -11,5 +11,6 @@ CREATE TABLE validators (
     activation_eligibility_epoch BIGINT NOT NULL,
     activation_epoch BIGINT NOT NULL,
     exit_epoch BIGINT NOT NULL,
-    withdrawable_epoch BIGINT NOT NULL
+    withdrawable_epoch BIGINT NOT NULL,
+    deposit_transaction BYTEA REFERENCES transactions(hash)
 );

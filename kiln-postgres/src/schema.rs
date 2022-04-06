@@ -25,6 +25,8 @@ table! {
 		from -> Nullable<Bytea>,
 		to -> Nullable<Bytea>,
 		input -> Bytea,
+		value -> Bytea,
+		status -> Nullable<Bool>,
 	}
 }
 
@@ -41,9 +43,11 @@ table! {
 		activation_epoch -> Int8,
 		exit_epoch -> Int8,
 		withdrawable_epoch -> Int8,
+		deposit_transaction -> Nullable<Bytea>,
 	}
 }
 
 joinable!(transactions -> execution_blocks (block_hash));
+joinable!(validators -> transactions (deposit_transaction));
 
 allow_tables_to_appear_in_same_query!(execution_blocks, slots, transactions, validators,);

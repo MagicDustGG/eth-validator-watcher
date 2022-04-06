@@ -34,10 +34,6 @@ impl DbSyncer for ConsensusSyncer {
 		self.1.clone()
 	}
 
-	async fn get_node_height(&self) -> Result<u64, Error> {
-		client_consensus::get_head_height(&self.node_client()).await
-	}
-
 	fn get_db_height(&self) -> Result<u64, Error> {
 		let highest_slot = Slot::get_highest(&self.0.get().unwrap())?;
 

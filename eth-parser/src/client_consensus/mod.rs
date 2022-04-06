@@ -31,13 +31,14 @@ pub async fn get_head_height(client: &BeaconNodeHttpClient) -> Result<u64, Error
 	Ok(ret.data.head_slot.as_u64())
 }
 
-/// Return the list of validators at head
+/// Return the list of validators at `slot`
 ///
 /// https://ethereum.github.io/beacon-APIs/#/Beacon/getStateValidators
-pub async fn get_validators_at_head(
+pub async fn get_validators_at_slot(
 	client: &BeaconNodeHttpClient,
+	slot: u64,
 ) -> Result<Option<Vec<ValidatorData>>, Error> {
-	let state_id = StateId::Head;
+	let state_id = StateId::Slot(Slot::new(slot));
 	let opt_r = client.get_beacon_states_validators(state_id, None, None).await?;
 
 	Ok(opt_r.map(|r| r.data))

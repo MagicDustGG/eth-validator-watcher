@@ -33,6 +33,8 @@ impl PackedNftTypes {
 
 	create_nft_getter_and_setter!(do_10_transactions_to_10_contracts, 5);
 
+	create_nft_getter_and_setter!(become_validator, 6);
+
 	pub fn zero() -> Self {
 		PackedNftTypes(U256::zero())
 	}

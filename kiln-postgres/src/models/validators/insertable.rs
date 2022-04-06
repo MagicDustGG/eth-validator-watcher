@@ -2,8 +2,12 @@ use diesel::{
 	pg::upsert::excluded, ExpressionMethods, Insertable, PgConnection, QueryResult, RunQueryDsl,
 };
 use eth2::types::ValidatorData;
+use primitive_types::H256;
 
-use crate::{models::Hash256, schema::validators};
+use crate::{
+	models::Hash256,
+	schema::{validators, validators::dsl::validators as dsl_validators},
+};
 
 #[derive(Insertable)]
 #[table_name = "validators"]
@@ -27,7 +31,7 @@ impl From<ValidatorData> for NewValidator {
 			index: data.index as i64,
 			balance: data.balance as i64,
 			status: data.status.to_string(),
-			pubkey: data.validator.pubkey.to_string(),
+			pubkey: data.validator.pubkey.as_hex_string(),
 			withdrawal_credentials: data.validator.withdrawal_credentials.into(),
 			effective_balance: data.validator.effective_balance as i64,
 			slashed: data.validator.slashed,
@@ -37,6 +41,21 @@ impl From<ValidatorData> for NewValidator {
 			exit_epoch: data.validator.exit_epoch.as_u64() as i64,
 			withdrawable_epoch: data.validator.withdrawable_epoch.as_u64() as i64,
 		}
+	}
+}
+
+impl NewValidator {
+	pub fn set_deposit_transaction(
+		conn: &PgConnection,
+		pubkey: String,
+		transaction: H256,
+	) -> QueryResult<usize> {
+		let transaction: Hash256 = transaction.into();
+
+		diesel::update(dsl_validators)
+			.filter(validators::pubkey.eq(pubkey))
+			.set(validators::deposit_transaction.eq(transaction))
+			.execute(conn)
 	}
 }
 

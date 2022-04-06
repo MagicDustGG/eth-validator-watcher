@@ -1,10 +1,13 @@
 use diesel::{ExpressionMethods, Identifiable, PgConnection, QueryDsl, QueryResult, RunQueryDsl};
-use primitive_types::H256;
+use primitive_types::{H160, H256};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-	models::Hash256,
-	schema::{validators, validators::dsl::validators as dsl_validators},
+	models::{Hash160, Hash256},
+	schema::{
+		transactions, transactions::dsl::transactions as dsl_transactions, validators,
+		validators::dsl::validators as dsl_validators,
+	},
 };
 
 #[derive(Queryable, Identifiable)]
@@ -22,6 +25,7 @@ struct DbValidator {
 	activation_epoch: i64,
 	exit_epoch: i64,
 	withdrawable_epoch: i64,
+	deposit_transaction: Option<Hash256>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -37,6 +41,7 @@ pub struct Validator {
 	activation_epoch: u64,
 	exit_epoch: u64,
 	withdrawable_epoch: u64,
+	deposit_transaction: Option<H256>,
 }
 
 impl From<DbValidator> for Validator {
@@ -53,26 +58,22 @@ impl From<DbValidator> for Validator {
 			activation_epoch: db_validator.activation_epoch as u64,
 			exit_epoch: db_validator.exit_epoch as u64,
 			withdrawable_epoch: db_validator.withdrawable_epoch as u64,
+			deposit_transaction: db_validator.deposit_transaction.map(|t| t.into()),
 		}
 	}
 }
 
 impl Validator {
-	/// Return a list of all validators `withdrawal_credentials`
-	pub fn list_credentials(conn: &PgConnection) -> QueryResult<Vec<H256>> {
-		let credentials: Vec<Hash256> =
-			dsl_validators.select(validators::withdrawal_credentials).load(conn)?;
+	pub fn is_validator(conn: &PgConnection, address: H160) -> QueryResult<bool> {
+		let address: Hash160 = address.into();
 
-		Ok(credentials.into_iter().map(|v| v.into()).collect())
-	}
+		let count: i64 = dsl_validators
+			.filter(validators::deposit_transaction.is_not_null())
+			.inner_join(dsl_transactions)
+			.filter(transactions::from.eq(address))
+			.count()
+			.get_result(conn)?;
 
-	/// Return a list of all slashed validators `withdrawal_credentials`
-	pub fn list_slashed_credentials(conn: &PgConnection) -> QueryResult<Vec<H256>> {
-		let slashed: Vec<Hash256> = dsl_validators
-			.filter(validators::slashed.eq(true))
-			.select(validators::withdrawal_credentials)
-			.load(conn)?;
-
-		Ok(slashed.into_iter().map(|v| v.into()).collect())
+		Ok(count != 0)
 	}
 }
