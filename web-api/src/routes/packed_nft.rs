@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use kiln_postgres::{Transaction, Validator};
 use primitive_types::H160;
 use rocket::{get, serde::json::Json};
+use rocket_sync_db_pools::diesel;
+use serde::Serialize;
 
 use crate::{packed_nft_types::PackedNftTypes, params::Hash160, Error, PgConn};
 
@@ -12,13 +14,44 @@ pub async fn nfts_by_address(
 	conn: PgConn,
 	address: Hash160,
 ) -> Result<Json<PackedNftTypes>, Error> {
+	let packed_nft = conn.run(move |c| inner_get_packed_nft(c, address.into())).await?;
+
+	Ok(Json(packed_nft))
+}
+
+#[derive(Serialize)]
+pub struct AddressNftPair {
+	address: H160,
+	nft: PackedNftTypes,
+}
+
+#[get("/nfts")]
+pub async fn list_all_eligible_nft(conn: PgConn) -> Result<Json<Vec<AddressNftPair>>, Error> {
+	let issuers = conn.run(move |c| Transaction::list_all_distinct_issuer(c)).await?;
+
+	let pairs = conn
+		.run(move |c| {
+			issuers
+				.into_iter()
+				.map(|h| inner_get_packed_nft(c, h).map(|r| AddressNftPair { address: h, nft: r }))
+				.collect::<Result<Vec<AddressNftPair>, Error>>()
+		})
+		.await?;
+
+	Ok(Json(pairs))
+}
+
+fn inner_get_packed_nft(
+	conn: &diesel::PgConnection,
+	address: H160,
+) -> Result<PackedNftTypes, Error> {
 	let mut packed_nfts = PackedNftTypes::zero();
 
 	// Get the address transaction
-	let transactions = conn.run(move |c| Transaction::list_from_address(c, address.into())).await?;
+	let transactions = Transaction::list_all_from_address(conn, address)?;
 
 	// is validator
-	if conn.run(move |c| Validator::is_validator(c, address.into())).await? {
+	if Validator::is_validator(conn, address)? {
 		packed_nfts.set_become_validator()
 	}
 
@@ -64,7 +97,7 @@ pub async fn nfts_by_address(
 		packed_nfts.set_do_10_transactions_to_10_contracts()
 	}
 
-	Ok(Json(packed_nfts))
+	Ok(packed_nfts)
 }
 
 fn is_smart_contract_call(transaction: &Transaction) -> bool {

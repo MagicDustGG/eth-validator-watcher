@@ -51,7 +51,10 @@ impl From<DbTransaction> for Transaction {
 }
 
 impl Transaction {
-	pub fn list_from_address(conn: &PgConnection, address: H160) -> QueryResult<Vec<Transaction>> {
+	pub fn list_all_from_address(
+		conn: &PgConnection,
+		address: H160,
+	) -> QueryResult<Vec<Transaction>> {
 		let address: Hash160 = address.into();
 
 		let db_transactions: Vec<DbTransaction> =
@@ -61,6 +64,20 @@ impl Transaction {
 			db_transactions.into_iter().map(|t| t.into()).collect();
 
 		Ok(transactions)
+	}
+
+	pub fn list_all_distinct_issuer(conn: &PgConnection) -> QueryResult<Vec<H160>> {
+		let db_hashs: Vec<Option<Hash160>> = dsl_transactions
+			.select(transactions::from)
+			.filter(transactions::from.is_not_null())
+			.distinct()
+			.load(conn)?;
+
+		// Safe to use `unwrap_unchecked` because we filtered NOT NULL in the query
+		let addresses =
+			db_hashs.into_iter().map(|h| unsafe { h.unwrap_unchecked().into() }).collect();
+
+		Ok(addresses)
 	}
 
 	/// Return the address of the transaction recipient
