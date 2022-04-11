@@ -50,9 +50,14 @@ fn inner_get_packed_nft(
 	// Get the address transaction
 	let transactions = Transaction::list_all_from_address(conn, address)?;
 
-	// is validator
-	if Validator::is_validator(conn, address)? {
-		packed_nfts.set_become_validator()
+	let opt_validator_slashed = Validator::is_validator_slashed(conn, address)?;
+	if let Some(slashed) = opt_validator_slashed {
+		// is validator
+		packed_nfts.set_become_validator();
+		// have been slash validator
+		if slashed {
+			packed_nfts.set_slashed_validator()
+		}
 	}
 
 	// Do at least 100 transactions

@@ -64,16 +64,20 @@ impl From<DbValidator> for Validator {
 }
 
 impl Validator {
-	pub fn is_validator(conn: &PgConnection, address: H160) -> QueryResult<bool> {
+	pub fn is_validator_slashed(conn: &PgConnection, address: H160) -> QueryResult<Option<bool>> {
 		let address: Hash160 = address.into();
 
-		let count: i64 = dsl_validators
+		let status: Vec<bool> = dsl_validators
 			.filter(validators::deposit_transaction.is_not_null())
 			.inner_join(dsl_transactions)
 			.filter(transactions::from.eq(address))
-			.count()
-			.get_result(conn)?;
+			.select(validators::slashed)
+			.load(conn)?;
 
-		Ok(count != 0)
+		Ok(if status.is_empty() {
+			None
+		} else {
+			status.get(0).copied()
+		})
 	}
 }
