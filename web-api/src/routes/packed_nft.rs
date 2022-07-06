@@ -1,9 +1,13 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::Deref};
 
 use kiln_postgres::{Transaction, Validator};
+use log::info;
 use primitive_types::H160;
 use rocket::{get, serde::json::Json};
-use rocket_sync_db_pools::diesel;
+use rocket_sync_db_pools::{
+	diesel::{self, r2d2::ConnectionManager, PgConnection},
+	r2d2::Pool,
+};
 use serde::Serialize;
 
 use crate::{packed_nft_types::PackedNftTypes, params::Hash160, Error, PgConn};
@@ -27,16 +31,25 @@ pub struct AddressNftPair {
 
 #[get("/nfts")]
 pub async fn list_all_eligible_nft(conn: PgConn) -> Result<Json<Vec<AddressNftPair>>, Error> {
-	let issuers = conn.run(move |c| Transaction::list_all_distinct_issuer(c)).await?;
+	use rayon::prelude::*;
 
-	let pairs = conn
-		.run(move |c| {
-			issuers
-				.into_iter()
-				.map(|h| inner_get_packed_nft(c, h).map(|r| AddressNftPair { address: h, nft: r }))
-				.collect::<Result<Vec<AddressNftPair>, Error>>()
+	let issuers = conn.run(move |c| Transaction::list_all_distinct_issuer(c)).await?;
+	info!("{} issuers to query", issuers.len());
+
+	let manager = ConnectionManager::<PgConnection>::new(std::env::var("DATABASE_URL").unwrap());
+	let pool = Pool::builder().build(manager).expect("Failed to create pool.");
+
+	let pairs = issuers
+		.par_iter()
+		.map(|issuer| {
+			let pool = pool.clone();
+			let connection = pool.get().unwrap();
+			inner_get_packed_nft(connection.deref(), *issuer).map(|r| AddressNftPair {
+				address: *issuer,
+				nft: r,
+			})
 		})
-		.await?;
+		.collect::<Result<Vec<AddressNftPair>, Error>>()?;
 
 	Ok(Json(pairs))
 }
@@ -56,6 +69,7 @@ fn inner_get_packed_nft(
 		packed_nfts.set_become_validator();
 		// have been slash validator
 		if slashed {
+			info!("get nfts for: {:?}", address);
 			packed_nfts.set_slashed_validator()
 		}
 	}
@@ -93,9 +107,9 @@ fn inner_get_packed_nft(
 	if deployed_contracts >= 10 {
 		packed_nfts.set_deploy_10_contract();
 	}
-	// deploy 50 contracts
-	if deployed_contracts >= 50 {
-		packed_nfts.set_deploy_50_contract();
+	// deploy 100 contracts
+	if deployed_contracts >= 100 {
+		packed_nfts.set_deploy_100_contract();
 	}
 	// called to 10 contracts 10 times each
 	if call_count_by_contract.into_values().filter(|&v| v >= 10).count() >= 10 {

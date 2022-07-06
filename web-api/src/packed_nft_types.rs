@@ -29,7 +29,7 @@ impl PackedNftTypes {
 
 	create_nft_getter_and_setter!(deploy_10_contract, 3);
 
-	create_nft_getter_and_setter!(deploy_50_contract, 4);
+	create_nft_getter_and_setter!(deploy_100_contract, 4);
 
 	create_nft_getter_and_setter!(do_10_transactions_to_10_contracts, 5);
 
